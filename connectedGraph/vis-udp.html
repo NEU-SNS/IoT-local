@@ -1,0 +1,127 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.css" type="text/css" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js"> </script>
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+
+<style type="text/css">
+
+        #mynetwork {
+            width: 500px;
+            height: 500px;
+            background-color: #ffffff;
+            border: 1px solid lightgray;
+            position: relative;
+            float: left;
+        }
+
+        
+
+        
+        #config {
+            float: left;
+            width: 400px;
+            height: 600px;
+        }
+        
+
+        
+</style>
+
+</head>
+
+<body>
+<div id = "mynetwork"></div>
+
+
+<div id = "config"></div>
+
+<script type="text/javascript">
+
+    // initialize global variables.
+    var edges;
+    var nodes;
+    var network; 
+    var container;
+    var options, data;
+
+    
+    // This method is responsible for drawing the graph, returns the drawn network
+    function drawGraph() {
+        var container = document.getElementById('mynetwork');
+        
+        
+
+        // // parsing and collecting nodes and edges from the python
+        // nodes = new vis.DataSet([{"id": "echoshow5", "label": "echoshow5", "shape": "dot", "size": 8}, {"id": "t-philips-hub", "label": "t-philips-hub", "shape": "dot", "size": 8}, {"id": "echodot4b", "label": "echodot4b", "shape": "dot", "size": 8}, {"id": "echospot", "label": "echospot", "shape": "dot", "size": 8}, {"id": "anpviz-cam", "label": "anpviz-cam", "shape": "dot", "size": 8}, {"id": "t-wemo-plug", "label": "t-wemo-plug", "shape": "dot", "size": 8}, {"id": "amcrest-cam-wired", "label": "amcrest-cam-wired", "shape": "dot", "size": 8}, {"id": "wansview-cam-wired", "label": "wansview-cam-wired", "shape": "dot", "size": 8}, {"id": "chromecast-googletv", "label": "chromecast-googletv", "shape": "dot", "size": 8}, {"id": "google-home-mini", "label": "google-home-mini", "shape": "dot", "size": 8}, {"id": "google-nest-mini2", "label": "google-nest-mini2", "shape": "dot", "size": 8}, {"id": "google-home-mini3", "label": "google-home-mini3", "shape": "dot", "size": 8}, {"id": "google-home-mini2", "label": "google-home-mini2", "shape": "dot", "size": 8}, {"id": "google-nest-mini1", "label": "google-nest-mini1", "shape": "dot", "size": 8}]);
+        // edges = new vis.DataSet([{"from": "echoshow5", "to": "t-philips-hub", "arrows": "to, from","value": 10.0}, {"from": "echodot4b", "to": "t-philips-hub", "value": 8.188531921359715}, {"from": "echospot", "to": "t-philips-hub", "value": 1.28914278736605}, {"from": "anpviz-cam", "to": "t-philips-hub", "value": 0.1030366515047479}, {"from": "echodot4b", "to": "t-wemo-plug", "value": 2.0485676520319145}, {"from": "amcrest-cam-wired", "to": "echodot4b", "value": 0.13049532225266353}, {"from": "echodot4b", "to": "wansview-cam-wired", "value": 0.15851442052932607}, {"from": "chromecast-googletv", "to": "echodot4b", "value": 0.014899170886199952}, {"from": "echoshow5", "to": "t-wemo-plug", "value": 2.5432656886674723}, {"from": "amcrest-cam-wired", "to": "echoshow5", "value": 0.15979019051346552}, {"from": "echoshow5", "to": "wansview-cam-wired", "value": 0.19409929044407276}, {"from": "chromecast-googletv", "to": "echoshow5", "value": 0.020858839240679928}, {"from": "google-home-mini", "to": "google-nest-mini2", "value": 3.1653493582193533}, {"from": "google-home-mini", "to": "google-home-mini3", "value": 5.449610958499658}, {"from": "echospot", "to": "t-wemo-plug", "value": 2.4822246512477713}, {"from": "echospot", "to": "wansview-cam-wired", "value": 0.19086430227000487}, {"from": "anpviz-cam", "to": "wansview-cam-wired", "value": 0.003296498512588888}, {"from": "google-home-mini2", "to": "google-nest-mini1", "value": 3.7885607173107863}, {"from": "amcrest-cam-wired", "to": "echospot", "value": 0.15712702067157444}, {"from": "chromecast-googletv", "to": "echospot", "value": 0.026818507595159913}]);
+
+    nodes = new vis.DataSet([{"id": "amazon-plug", "label": "amazon-plug", "shape": "dot", "size": 8}, {"id": "amcrest-cam-wired", "label": "amcrest-cam-wired", "shape": "dot", "size": 8}, {"id": "appletv-wifi", "label": "appletv-wifi", "shape": "dot", "size": 8}, {"id": "aqara-hub", "label": "aqara-hub", "shape": "dot", "size": 8}, {"id": "arlo-doorbell", "label": "arlo-doorbell", "shape": "dot", "size": 8}, {"id": "arlo-q-cam", "label": "arlo-q-cam", "shape": "dot", "size": 8}, {"id": "blueair-purifier", "label": "blueair-purifier", "shape": "dot", "size": 8}, {"id": "bulb1", "label": "bulb1", "shape": "dot", "size": 8}, {"id": "chromecast-googletv", "label": "chromecast-googletv", "shape": "dot", "size": 8}, {"id": "dlink-camera", "label": "dlink-camera", "shape": "dot", "size": 8}, {"id": "dryer", "label": "dryer", "shape": "dot", "size": 8}, {"id": "echodot", "label": "echodot", "shape": "dot", "size": 8}, {"id": "echodot3a", "label": "echodot3a", "shape": "dot", "size": 8}, {"id": "echodot3b", "label": "echodot3b", "shape": "dot", "size": 8}, {"id": "echodot3c", "label": "echodot3c", "shape": "dot", "size": 8}, {"id": "echodot3d", "label": "echodot3d", "shape": "dot", "size": 8}, {"id": "echodot4a", "label": "echodot4a", "shape": "dot", "size": 8}, {"id": "echoflex1", "label": "echoflex1", "shape": "dot", "size": 8}, {"id": "echoflex2", "label": "echoflex2", "shape": "dot", "size": 8}, {"id": "echoplus", "label": "echoplus", "shape": "dot", "size": 8}, {"id": "echoshow5", "label": "echoshow5", "shape": "dot", "size": 8}, {"id": "echospot", "label": "echospot", "shape": "dot", "size": 8}, {"id": "facebook-portal-mini", "label": "facebook-portal-mini", "shape": "dot", "size": 8}, {"id": "firetv", "label": "firetv", "shape": "dot", "size": 8}, {"id": "fridge", "label": "fridge", "shape": "dot", "size": 8}, {"id": "google-home-mini", "label": "google-home-mini", "shape": "dot", "size": 8}, {"id": "google-home-mini2", "label": "google-home-mini2", "shape": "dot", "size": 8}, {"id": "google-nest-mini1", "label": "google-nest-mini1", "shape": "dot", "size": 8}, {"id": "google-nest-mini2", "label": "google-nest-mini2", "shape": "dot", "size": 8}, {"id": "gosund-bulb1", "label": "gosund-bulb1", "shape": "dot", "size": 8}, {"id": "govee-led1", "label": "govee-led1", "shape": "dot", "size": 8}, {"id": "homepod", "label": "homepod", "shape": "dot", "size": 8}, {"id": "homepod-mini1", "label": "homepod-mini1", "shape": "dot", "size": 8}, {"id": "homepod-mini2", "label": "homepod-mini2", "shape": "dot", "size": 8}, {"id": "icsee-doorbell", "label": "icsee-doorbell", "shape": "dot", "size": 8}, {"id": "ikea-hub", "label": "ikea-hub", "shape": "dot", "size": 8}, {"id": "ikettle", "label": "ikettle", "shape": "dot", "size": 8}, {"id": "keyco-air", "label": "keyco-air", "shape": "dot", "size": 8}, {"id": "lefun-cam-wired", "label": "lefun-cam-wired", "shape": "dot", "size": 8}, {"id": "magichome-strip", "label": "magichome-strip", "shape": "dot", "size": 8}, {"id": "meross-dooropener", "label": "meross-dooropener", "shape": "dot", "size": 8}, {"id": "microseven-camera", "label": "microseven-camera", "shape": "dot", "size": 8}, {"id": "microwave", "label": "microwave", "shape": "dot", "size": 8}, {"id": "nest-camera", "label": "nest-camera", "shape": "dot", "size": 8}, {"id": "nest-doorbell", "label": "nest-doorbell", "shape": "dot", "size": 8}, {"id": "nest-hub-max", "label": "nest-hub-max", "shape": "dot", "size": 8}, {"id": "nest-tstat", "label": "nest-tstat", "shape": "dot", "size": 8}, {"id": "nintendo-switch", "label": "nintendo-switch", "shape": "dot", "size": 8}, {"id": "oxylink", "label": "oxylink", "shape": "dot", "size": 8}, {"id": "ring-chime1", "label": "ring-chime1", "shape": "dot", "size": 8}, {"id": "ring-doorbell", "label": "ring-doorbell", "shape": "dot", "size": 8}, {"id": "ring-doorbell-wired", "label": "ring-doorbell-wired", "shape": "dot", "size": 8}, {"id": "ring-indoor-cam", "label": "ring-indoor-cam", "shape": "dot", "size": 8}, {"id": "roku-tv", "label": "roku-tv", "shape": "dot", "size": 8}, {"id": "smartlife-bulb", "label": "smartlife-bulb", "shape": "dot", "size": 8}, {"id": "smartthings-hub", "label": "smartthings-hub", "shape": "dot", "size": 8}, {"id": "sousvide", "label": "sousvide", "shape": "dot", "size": 8}, {"id": "switchbot-hub", "label": "switchbot-hub", "shape": "dot", "size": 8}, {"id": "t-echodot", "label": "t-echodot", "shape": "dot", "size": 8}, {"id": "t-philips-hub", "label": "t-philips-hub", "shape": "dot", "size": 8}, {"id": "t-wemo-plug", "label": "t-wemo-plug", "shape": "dot", "size": 8}, {"id": "thermopro-sensor", "label": "thermopro-sensor", "shape": "dot", "size": 8}, {"id": "tivostream", "label": "tivostream", "shape": "dot", "size": 8}, {"id": "tplink-bulb", "label": "tplink-bulb", "shape": "dot", "size": 8}, {"id": "tplink-plug", "label": "tplink-plug", "shape": "dot", "size": 8}, {"id": "tuya-camera", "label": "tuya-camera", "shape": "dot", "size": 8}, {"id": "ubell-doorbell", "label": "ubell-doorbell", "shape": "dot", "size": 8}, {"id": "wansview-cam-wired", "label": "wansview-cam-wired", "shape": "dot", "size": 8}, {"id": "withings-sleep", "label": "withings-sleep", "shape": "dot", "size": 8}, {"id": "wyze-cam", "label": "wyze-cam", "shape": "dot", "size": 8}, {"id": "xiaomi-induction", "label": "xiaomi-induction", "shape": "dot", "size": 8}, {"id": "xiaomi-ricecooker", "label": "xiaomi-ricecooker", "shape": "dot", "size": 8}, {"id": "yi-camera", "label": "yi-camera", "shape": "dot", "size": 8}]);
+
+    edges = new vis.DataSet([{"from": "amcrest-cam-wired", "to": "echodot", "value": 0.060787}, {"from": "amcrest-cam-wired", "to": "echodot3a", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echodot3b", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echodot3c", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echodot3d", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echodot4a", "value": 0.060787}, {"from": "amcrest-cam-wired", "to": "echoflex1", "value": 0.053181}, {"from": "amcrest-cam-wired", "to": "echoflex2", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echoplus", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echoshow5", "value": 0.091211}, {"from": "amcrest-cam-wired", "to": "echospot", "value": 0.106424}, {"from": "amcrest-cam-wired", "to": "t-echodot", "value": 0.091211}, {"from": "chromecast-googletv", "to": "nest-hub-max", "value": 0.258058}, {"from": "dryer", "to": "echoplus", "value": 0.001125}, {"from": "echodot", "to": "roku-tv", "value": 0.013894}, {"from": "echodot", "to": "t-philips-hub", "value": 0.042699}, {"from": "echodot", "to": "t-wemo-plug", "value": 0.001122}, {"from": "echodot3a", "to": "roku-tv", "value": 0.012878}, {"from": "echodot3a", "to": "t-philips-hub", "value": 0.096862}, {"from": "echodot3a", "to": "tplink-bulb", "value": 0.143331}, {"from": "echodot3a", "to": "tplink-plug", "value": 0.289661}, {"from": "echodot3b", "to": "roku-tv", "value": 0.012508}, {"from": "echodot3b", "to": "t-philips-hub", "value": 0.088310}, {"from": "echodot3b", "to": "t-wemo-plug", "value": 0.001713}, {"from": "echodot3b", "to": "tplink-bulb", "value": 0.077488}, {"from": "echodot3b", "to": "tplink-plug", "value": 0.377564}, {"from": "echodot3c", "to": "roku-tv", "value": 0.023506}, {"from": "echodot3c", "to": "t-philips-hub", "value": 0.085460}, {"from": "echodot3c", "to": "t-wemo-plug", "value": 0.001122}, {"from": "echodot3c", "to": "tplink-bulb", "value": 0.134552}, {"from": "echodot3c", "to": "tplink-plug", "value": 0.338097}, {"from": "echodot3d", "to": "roku-tv", "value": 0.019532}, {"from": "echodot3d", "to": "t-philips-hub", "value": 0.102564}, {"from": "echodot3d", "to": "t-wemo-plug", "value": 0.001122}, {"from": "echodot3d", "to": "tplink-bulb", "value": 0.152110}, {"from": "echodot3d", "to": "tplink-plug", "value": 0.356934}, {"from": "echodot4a", "to": "roku-tv", "value": 0.011768}, {"from": "echodot4a", "to": "t-philips-hub", "value": 0.056953}, {"from": "echodot4a", "to": "tplink-bulb", "value": 0.002865}, {"from": "echoflex1", "to": "roku-tv", "value": 0.015234}, {"from": "echoflex1", "to": "t-philips-hub", "value": 0.059803}, {"from": "echoflex1", "to": "tplink-bulb", "value": 0.058466}, {"from": "echoflex1", "to": "tplink-plug", "value": 0.044788}, {"from": "echoflex2", "to": "roku-tv", "value": 0.017961}, {"from": "echoflex2", "to": "t-philips-hub", "value": 0.085460}, {"from": "echoflex2", "to": "t-wemo-plug", "value": 0.001122}, {"from": "echoflex2", "to": "tplink-bulb", "value": 0.203322}, {"from": "echoflex2", "to": "tplink-plug", "value": 0.420619}, {"from": "echoplus", "to": "roku-tv", "value": 0.018422}, {"from": "echoplus", "to": "t-philips-hub", "value": 0.094012}, {"from": "echoshow5", "to": "roku-tv", "value": 0.019993}, {"from": "echoshow5", "to": "t-philips-hub", "value": 0.102564}, {"from": "echoshow5", "to": "t-wemo-plug", "value": 0.001713}, {"from": "echoshow5", "to": "tplink-bulb", "value": 0.124310}, {"from": "echoshow5", "to": "tplink-plug", "value": 0.304012}, {"from": "echospot", "to": "roku-tv", "value": 0.025817}, {"from": "echospot", "to": "t-philips-hub", "value": 0.102564}, {"from": "echospot", "to": "t-wemo-plug", "value": 0.001122}, {"from": "google-home-mini", "to": "google-home-mini2", "value": 0.015232}, {"from": "google-home-mini", "to": "google-nest-mini2", "value": 7.024278}, {"from": "google-home-mini", "to": "t-philips-hub", "value": 10.923058}, {"from": "google-home-mini", "to": "t-wemo-plug", "value": 0.376622}, {"from": "google-home-mini", "to": "tplink-bulb", "value": 1.016364}, {"from": "google-home-mini", "to": "tplink-plug", "value": 0.619741}, {"from": "google-home-mini2", "to": "google-home-mini3", "value": 5.385374}, {"from": "google-home-mini2", "to": "google-nest-mini1", "value": 6.618488}, {"from": "google-home-mini2", "to": "nest-camera", "value": 0.000113}, {"from": "google-home-mini2", "to": "nest-hub-max", "value": 0.022445}, {"from": "google-home-mini2", "to": "t-philips-hub", "value": 10.022845}, {"from": "google-home-mini2", "to": "t-wemo-plug", "value": 0.367078}, {"from": "google-home-mini2", "to": "tivostream", "value": 0.022879}, {"from": "google-home-mini2", "to": "tplink-bulb", "value": 0.904616}, {"from": "google-home-mini2", "to": "tplink-plug", "value": 0.558957}, {"from": "google-nest-mini1", "to": "google-nest-mini2", "value": 7.168539}, {"from": "google-nest-mini1", "to": "t-philips-hub", "value": 10.775535}, {"from": "google-nest-mini1", "to": "t-wemo-plug", "value": 0.391893}, {"from": "google-nest-mini1", "to": "tplink-bulb", "value": 0.984662}, {"from": "google-nest-mini1", "to": "tplink-plug", "value": 0.597692}, {"from": "google-nest-mini2", "to": "google-home-mini3", "value": 10.000000}, {"from": "google-nest-mini2", "to": "nest-camera", "value": 0.043337}, {"from": "google-nest-mini2", "to": "nest-doorbell", "value": 0.000061}, {"from": "google-nest-mini2", "to": "nest-hub-max", "value": 0.086280}, {"from": "google-nest-mini2", "to": "pixel3b", "value": 0.000225}, {"from": "google-nest-mini2", "to": "t-philips-hub", "value": 11.242351}, {"from": "google-nest-mini2", "to": "t-wemo-plug", "value": 0.384258}, {"from": "google-nest-mini2", "to": "tivostream", "value": 0.008474}, {"from": "google-nest-mini2", "to": "tplink-bulb", "value": 0.956862}, {"from": "google-nest-mini2", "to": "tplink-plug", "value": 0.588352}, {"from": "nest-hub-max", "to": "t-philips-hub", "value": 10.958455}, {"from": "nest-hub-max", "to": "t-wemo-plug", "value": 0.386166}, {"from": "nest-hub-max", "to": "tplink-bulb", "value": 0.986857}, {"from": "nest-hub-max", "to": "tplink-plug", "value": 0.585661}, {"from": "roku-tv", "to": "t-echodot", "value": 0.021934}, {"from": "roku-tv", "to": "t-philips-hub", "value": 0.014192}, {"from": "t-echodot", "to": "t-philips-hub", "value": 0.096862}, {"from": "t-echodot", "to": "t-wemo-plug", "value": 0.002305}, {"from": "t-philips-hub", "to": "google-home-mini3", "value": 5.464706}, {"from": "t-philips-hub", "to": "t-wemo-plug", "value": 0.226569}, {"from": "t-wemo-plug", "to": "echoflex1", "value": 0.000826}, {"from": "t-wemo-plug", "to": "google-home-mini3", "value": 0.194643}, {"from": "tplink-bulb", "to": "google-home-mini3", "value": 0.498153}, {"from": "tplink-plug", "to": "google-home-mini3", "value": 0.304012}]);
+
+        // adding nodes and edges to the graph
+        data = {nodes: nodes, edges: edges};
+
+        var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": false,
+            "type": "continuous"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+        
+        
+
+        
+        // if this network requires displaying the configure window,
+        // put it in its div
+        options.configure["container"] = document.getElementById("config");
+        
+
+        network = new vis.Network(container, data, options);
+	 
+        
+
+
+        
+
+        return network;
+
+    }
+
+    drawGraph();
+
+</script>
+</body>
+</html>
