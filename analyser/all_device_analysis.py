@@ -2,6 +2,7 @@ from . import plotting
 from analyser.flow_extraction import extract_single, burst_split
 import os
 import pickle
+from analyser.utils import * 
 
 def addressing_distribution(packets:list[str]) -> list[int]:
     output = [0,0,0]

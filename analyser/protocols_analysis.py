@@ -6,39 +6,7 @@ import datetime
 # from analyser.protocols.dhcp import dhcp_analysis
 # from analyser.protocols.arp import arp_analysis
 
-
-def addressing_method(address:str) -> str:
-    """Determine traffic addressing method: unicast, multicast, broadcast
-
-    Args:
-        address (str): destination MAC address
-
-    Returns:
-        str: addressing method
-    """
-
-    if is_broadcast(address):
-        return 2
-    elif is_multicast(address):
-        return 1
-    # elif is_ipv6(address) and is_anycast(address):
-    #     return 'anycast' 
-    return 0
-
-def is_broadcast(address:str) -> bool:
-    return address=='ff:ff:ff:ff:ff:ff'
-
-
-def is_multicast(address:str) -> bool:
-    # if utils.validate_ip_address(address): 
-    #     return ipaddress.ip_address("127.0.0.1").is_multicast
-    return (address.startswith('01:00:5e') or address.startswith('33:33'))
-
-def is_router(address1:str, address2:str) -> bool:
-    return (address1 in utils.LOCAL_MACS or address2 in utils.LOCAL_MACS)
 # TODO
-
-
 def extract_tls_cert(capture):
     count = 0
     for packet in capture:
@@ -48,9 +16,11 @@ def extract_tls_cert(capture):
     capture.close()
     return count 
 
+# TODO
 def tls_analysis():
 
     return 0 
+
 
 def MC_analysis(out_dir, dict_dec, packets_dict):
     cur_out_dir = os.path.join(out_dir, 'protocols','multicast')
@@ -122,6 +92,19 @@ def MC_analysis(out_dir, dict_dec, packets_dict):
 #     if packet.ip.dst.split('.')[-1] != '22':
 #         print('Wrong IGMP multicast group')
 
+
+def mdns_analysis(packet):
+    if packet.eth.dst.split(':')[-1] != 'fb':
+        print('Wrong MDNS multicast group')
+        return 1
+    else:
+        return 0
+    
+    
+def ipv6_analysis():
+    return 0
+
+
 def dhcpv6_analysis(packet):
     if packet.eth.dst.split(':')[-1] != '3' or packet.eth.dst.split(':')[-2] != '1':
         # print('Wrong DHCPv6 multicast group')
@@ -130,14 +113,13 @@ def dhcpv6_analysis(packet):
         return 0
     
 
-def mdns_analysis(packet):
-    if packet.eth.dst.split(':')[-1] != 'fb':
-        print('Wrong MDNS multicast group')
-        return 1
-    else:
-        return 0
-
 def icmpv6_analysis():
+    return 0
+
+def http_analysis():
+    return 0
+
+def udp_analysis():
     return 0
 
 def llc_analysis(out_dir, dict_dec, packets_dict):
@@ -338,7 +320,7 @@ def ssdp_analysis(out_dir, dict_dec, packets_dict):
     
     return_list = []
     for device in dict_dec:
-        count += 1
+        # count += 1
         print(device, unicast_count.get(device, 0), multicast_count.get(device, 0), request_count.get(device, 0), reply_count.get(device, 0))
         if (unicast_count.get(device, 0) + multicast_count.get(device, 0) ) == 0:
             continue
@@ -571,7 +553,7 @@ def dhcp_analysis(out_dir, dict_dec, packets_dict):
             other[device] = 0 
             not_request_ack[device] = 0
             continue
-        request_info = []
+        request_info = set()
         vendor_class_id = ''
         dhcp_type = {}
         for packet in packets_dict[device]:
@@ -599,7 +581,13 @@ def dhcp_analysis(out_dir, dict_dec, packets_dict):
                 for line in packet.dhcp._get_all_field_lines():
                     if line.strip().startswith('Parameter'):
                         # print(line)
-                        request_info.append(line.strip().split(':')[1])
+                        request_info.add(line.strip().split(':')[1])
+            elif packet.dhcp.option_dhcp == '1':
+                for line in packet.dhcp._get_all_field_lines():
+                    if line.strip().startswith('Parameter'):
+                        # print(line)
+                        request_info.add(line.strip().split(':')[1])
+                
             if len(vendor_class_id) == 0:
                 try:
                     vendor_class_id = packet.dhcp.option_vendor_class_id
@@ -664,24 +652,17 @@ def protocols_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_fil
             return classicstun_analysis(out_dir, dict_dec, all_packets_captures)
         case 'multicast':
             return MC_analysis(out_dir, dict_dec, all_packets_captures)
+        case 'http':
+            return http_analysis(out_dir, dict_dec, all_packets_captures)
+        case 'tls':
+            return tls_analysis(out_dir, dict_dec, all_packets_captures)
+        case 'ipv6':
+            return ipv6_analysis(out_dir, dict_dec, all_packets_captures)
+        case 'udp':
+            return udp_analysis(out_dir, dict_dec, all_packets_captures)
         case _:
             return 0 
-    # if pcap_filter.lower() == 'dhcp':
-    #     return dhcp_analysis(out_dir, dict_dec, all_packets_captures)
-    # elif pcap_filter.lower() == 'arp':
-    #     return arp_analysis(out_dir, dict_dec, all_packets_captures)
-    # elif pcap_filter.lower() == 'icmp':
-    #     return icmp_analysis(out_dir, dict_dec, all_packets_captures)
-    # elif pcap_filter.lower() == 'ssdp':
-    #     return ssdp_analysis(out_dir, dict_dec, all_packets_captures)
-    # elif pcap_filter.lower() == 'llc':
-    #     return llc_analysis(out_dir, dict_dec, all_packets_captures)
-    # elif pcap_filter.lower() == 'tplink-smarthome':
-    #     return tplink_smarthome_analysis(out_dir, dict_dec, all_packets_captures)
-    # elif pcap_filter.lower() == 'multicast':
-    #     return MC_analysis(out_dir, dict_dec, all_packets_captures)
-    # else:
-    #     return 0 
+
 
 # def protocols_analysis_tshark(out_dir, dict_dec, all_packets, pcap_filter):
 #     # TODO

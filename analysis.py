@@ -19,10 +19,11 @@ matplotlib.use('Agg')
 
 from analyser.utils import *
 from analyser.flow_extraction import extract_single, burst_split
-import analyser.plotting  as plotting
+import analyser.plotting as plotting
 from analyser.extract_ca import analyzePacket
 from analyser.protocols_analysis import * 
 from analyser.all_device_analysis import * 
+from analyser.vis import *
 # import nest_asyncio
 # nest_asyncio.apply()
 
@@ -123,52 +124,6 @@ def per_protocol_analysis_tshark(out_dir, dict_dec, all_packets_results, pcap_fi
     new_packets = protocol_filter(dict_dec, all_packets_results, pcap_filter)
     return protocols_analysis_tshark(out_dir, dict_dec, new_packets, pcap_filter)
 
-def tcp_vis(results:list[str]) -> dict[str,int]:
-    """_summary_
-
-    Args:
-        results (list[str]): list of packets
-
-    Returns:
-        dict[str,int]: {dst: size}
-    """
-    vis_output= {}
-    
-    for packet in results:
-        if len(packet) < 12: 
-            continue
-        if is_broadcast(packet[5]) or is_multicast(packet[5]) or is_router(packet[4], packet[5]):
-            continue
-        if packet[7] == '6': 
-            if packet[-1] not in vis_output:
-                vis_output[packet[-1]] = 0
-            vis_output[packet[-1]] += int(packet[3])
-
-    return vis_output
-
-def udp_vis(results:list[str]) -> dict[str,int]:
-    """_summary_
-
-    Args:
-        results (list[str]): list of packets
-
-    Returns:
-        dict[str,int]: {dst: size}
-    """
-    vis_output= {}
-    
-    for packet in results:
-        if len(packet) < 12: 
-            continue
-        if is_broadcast(packet[5]) or is_multicast(packet[5]) or is_router(packet[4], packet[5]):
-            continue
-        if packet[7] == '17': 
-            if packet[-1] not in vis_output:
-                vis_output[packet[-1]] = 0
-            vis_output[packet[-1]] += int(packet[3])
-
-    return vis_output
-
 
 # def process_inputs(dict_dec:list[str], model_dir:str)
 
@@ -258,7 +213,7 @@ def idle_inputs(dict_dec:dict, model_dir:str, model_file_name:str, pcap_filter:s
 
     return all_packets_results
 
-  
+
 
 def pyshark_idle_input_threading(dict_dec:dict, out_dir:str, pcap_filter:str):
     num_thread = 12
@@ -312,6 +267,7 @@ def pyshark_idle_input(dict_dec:dict, out_dir:str, pcap_filter:str)->dict[str:li
 
     # model_dir = os.path.join(out_dir, 'models')
     new_pcap_dir = os.path.join(out_dir, 'pcap')
+    # t1 = time.time()
     for device in dict_dec:
 
         results = []
@@ -332,36 +288,29 @@ def pyshark_idle_input(dict_dec:dict, out_dir:str, pcap_filter:str)->dict[str:li
             all_packets_captures[device] = results
             
             print('reading... Protocol %s, Device %s' % (pcap_filter, device), len(results), isinstance(results, pyshark.FileCapture))
-            # t1 = time.time()
-            # results.load_packets()
-            # print(len(results))
-            # print('Time1:', time.time()-t1)
-            # t2 = time.time()
-            # tmp = []
-            # for t in results2:
-            #     tmp.append(t)
-            # print(len(tmp))
-            # print('Time2:', time.time()-t2)
+
+
             results.close()
-            # results2.close()
+
             continue
         
         tmp_count = 0 
         for pcap_file in dict_dec[device]:
             tmp_count += 1
             tmp_capture = extract_pcap_pyshark(pcap_file, pcap_filter, os.path.join(cur_new_pcap_dir, pcap_filter+str(tmp_count)+'.pcap'))
-            if isinstance(tmp_capture, int):
-                continue
-            # print(len(tmp_capture))
-            try:
-                for tmp in tmp_capture:
-                    results.append(tmp)
-                tmp_capture.close()
-            except:
-                print(device, 'failed!!!!! ', tmp_capture)
-                tmp_capture.close()
-                # print(tmp_capture)
-                continue
+
+            # if isinstance(tmp_capture, int):
+            #     continue
+            # # print(len(tmp_capture))
+            # try:
+            # for tmp in tmp_capture:
+            #     results.append(tmp)
+            # tmp_capture.close()
+            # except:
+            #     print(device, 'failed!!!!! ', tmp_capture)
+            #     tmp_capture.close()
+            #     # print(tmp_capture)
+            #     continue
 
         merge_list = []
         for tmp_pcap in os.listdir(cur_new_pcap_dir):
@@ -372,7 +321,14 @@ def pyshark_idle_input(dict_dec:dict, out_dir:str, pcap_filter:str)->dict[str:li
 
         if len(merge_list) != 0:
             merge_pcap(cur_new_pcap_dir, pcap_filter, merge_list)
-            
+        
+        if os.path.isfile(os.path.join(cur_new_pcap_dir, pcap_filter+'.pcap')):
+            results = extract_pcap_pyshark(os.path.join(cur_new_pcap_dir, pcap_filter+'.pcap'), pcap_filter, '')
+            all_packets_captures[device] = results
+            results.close()
+            print('Protocol %s, Device %s: %d packets' % (pcap_filter, device, len(results)))
+            continue
+
         if len(results) == 0 or len(results) == 1:
             print('%s Result==0' % device)
             continue
@@ -381,9 +337,28 @@ def pyshark_idle_input(dict_dec:dict, out_dir:str, pcap_filter:str)->dict[str:li
         # exit(1)
         all_packets_captures[device] = results
 
-
+    # print('Time1:', time.time()-t1)
     return all_packets_captures
 
+
+def extract_pcap_pyshark(pcap_file:str, pcap_filter:str, output_pcap):
+    capture = 0
+    if pcap_filter=='multicast':
+        pcap_filter='eth.addr!=ff:ff:ff:ff:ff:ff&&eth.dst.ig==1'
+    if output_pcap == '':
+        # print(pcap_file, pcap_filter)
+        
+        capture = pyshark.FileCapture(str(pcap_file), display_filter=pcap_filter) # 
+        
+        return capture
+
+    # print(pcap_file, pcap_filter, output_pcap)
+    # capture = pyshark.FileCapture(str(pcap_file), display_filter=pcap_filter, output_file=str(output_pcap)) 
+
+    # tshark is faster than pyshark in saving filtered traffic into a new pcap file
+    os.system('tshark -r %s -Y %s -w %s' % (str(pcap_file), pcap_filter, str(output_pcap)))
+    return 0
+    
 
 def extract_pcap_command_line(pcap_file:str, pcap_filter:str) -> list[list[str]]:
     """extract features from a pcap file
@@ -470,28 +445,7 @@ def extract_pcap_command_line(pcap_file:str, pcap_filter:str) -> list[list[str]]
 
     return result
 
-def extract_pcap_pyshark(pcap_file:str, pcap_filter:str, output_pcap):
-    capture = 0
-    if pcap_filter=='multicast':
-        pcap_filter='eth.addr!=ff:ff:ff:ff:ff:ff&&eth.dst.ig==1'
-    if output_pcap == '':
-        # print(pcap_file, pcap_filter)
-        
-        capture = pyshark.FileCapture(str(pcap_file), display_filter=pcap_filter) # 
-        
-        # print('len cap:', len(capture))
-        # try:
-        #     print('len cap:', len(capture[0]))
-        # except:
-        #     pass
-        return capture
-    # print(pcap_file, pcap_filter)
-    capture = pyshark.FileCapture(str(pcap_file), display_filter=pcap_filter, output_file=str(output_pcap)) # 'tls.handshake.certificate'
-    # print('len cap:', len(capture))
-    # capture.load_packets()
-    # print(capture[0])
 
-    return capture
 
 def main():
     global mac_dic, out_dir
@@ -558,7 +512,7 @@ def main():
         device = dev_dir
         # if device != 'amazon-plug': #  and device != 'google-home-mini':
         #     continue
-        # if device != 'tivostream': #  and device != 'google-home-mini':
+        # if device != 'echodot3a': #  and device != 'google-home-mini':
         #     continue
         # if device != 't-philips-hub':
         #     continue
@@ -608,17 +562,7 @@ def main():
     # mc_packets_results = protocol_filter(dict_dec, all_packets_results, 'multicast')
     # basic_analysis_output(model_dir, os.path.join(out_dir,'mc'),  dict_dec, mc_packets_results)
 
-    # exit(1)
-    # # TODO backup
-    # all_packets_captures = pyshark_idle_input(dict_dec, out_dir, 'dhcp')
-    # _ = pyshark_idle_input(dict_dec, out_dir, 'tplink-smarthome')
-    # cur_filter = 'arp'
-    # all_packets_captures = pyshark_idle_input(dict_dec, out_dir, cur_filter)
-    # # # _ = pyshark_idle_input(dict_dec, out_dir, 'eapol')
-    # # # _ = pyshark_idle_input(dict_dec, out_dir, 'icmp')
-    # re = per_protocol_analysis(out_dir, dict_dec, all_packets_captures, cur_filter)
-    # print(re)
-    # # TODO protocol specific analysis
+    # * protocol specific analysis
     # cur_filter = 'dhcp'
     print('Current Filter: ', cur_filter)
     # exit(1)
@@ -683,14 +627,6 @@ def multiprocessing_wrapper(out_dir, dict_dec, all_packets_captures, cur_filter)
 
 
 def run_protocol_analysis(input_wrapper, procnum, return_dict):
-    # _, device_list, all_packets_captures, _ = input_wrapper
-    # new_dict_dec = {}
-    # new_packets_captures = {}
-    # for device in device_list:
-    #     if device not in all_packets_captures:
-    #         continue
-    #     new_packets_captures[device] = all_packets_captures[device]
-    # input_wrapper[2] = new_packets_captures
     return_dict[procnum] = per_protocol_analysis(input_wrapper)
 
 

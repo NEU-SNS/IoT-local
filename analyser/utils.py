@@ -12,6 +12,37 @@ LOCAL_MACS = ['22:ef:03:1a:97:b9']
 
 
 
+def addressing_method(address:str) -> str:
+    """Determine traffic addressing method: unicast, multicast, broadcast
+
+    Args:
+        address (str): destination MAC address
+
+    Returns:
+        str: addressing method
+    """
+
+    if is_broadcast(address):
+        return 2
+    elif is_multicast(address):
+        return 1
+    # elif is_ipv6(address) and is_anycast(address):
+    #     return 'anycast' 
+    return 0
+
+def is_broadcast(address:str) -> bool:
+    return address=='ff:ff:ff:ff:ff:ff'
+
+
+def is_multicast(address:str) -> bool:
+    # if utils.validate_ip_address(address): 
+    #     return ipaddress.ip_address("127.0.0.1").is_multicast
+    return (address.startswith('01:00:5e') or address.startswith('33:33'))
+
+def is_router(address1:str, address2:str) -> bool:
+    return (address1 in LOCAL_MACS or address2 in LOCAL_MACS)
+
+
 def is_local(ip_src, ip_dst):
     is_local = False
     try:
