@@ -3,6 +3,8 @@ from analyser.utils import *
 import os
 import time
 import datetime
+import csv
+import re
 # from analyser.protocols.dhcp import dhcp_analysis
 # from analyser.protocols.arp import arp_analysis
 
@@ -20,6 +22,18 @@ def extract_tls_cert(capture):
 def tls_analysis():
 
     return 0 
+
+
+
+"""
+Protocol-wise analysis 
+inputs: 
+    out_dir: output directory
+    dict_dec: a dictionary with device names as keys and pcap files as values
+    packets_dict: a dictionary of pyshark-processed packets, keys are the device name and values are packets
+return:
+    (header, return_list)
+"""
 
 
 def MC_analysis(out_dir, dict_dec, packets_dict):
@@ -56,7 +70,7 @@ def MC_analysis(out_dir, dict_dec, packets_dict):
 
             top_layer_name = packet.layers[-1].layer_name
             if top_layer_name=='mdns':
-                wrong_group_count[device] = wrong_group_count.get(device, 0) + mdns_analysis(packet)
+                wrong_group_count[device] = wrong_group_count.get(device, 0) + mdns_packet_analysis(packet)
             elif top_layer_name=='dhcpv6':
                 wrong_group_count[device] = wrong_group_count.get(device, 0) + dhcpv6_analysis(packet)
             # if top_layer_name=='igmp':
@@ -93,16 +107,187 @@ def MC_analysis(out_dir, dict_dec, packets_dict):
 #         print('Wrong IGMP multicast group')
 
 
-def mdns_analysis(packet):
+def mdns_packet_analysis(packet):
     if packet.eth.dst.split(':')[-1] != 'fb':
         print('Wrong MDNS multicast group')
         return 1
     else:
         return 0
+
+
+def mdns_analysis(out_dir, dict_dec, packets_dict):
+    cur_out_dir = os.path.join(out_dir, 'protocols','mdns')
+    v4_count = {}
+    v6_count = {}
+    query_count = {}
+    response_count = {}
+    unique_query_count = {}
+    unique_response_count = {}
     
+    for device in dict_dec:
+        print('analyzing MDNS packets...', device) # os.getpid()
+        if device not in packets_dict:
+            continue
+        
+        query_records = {}
+        response_records = {}
+        type_dict = {'1':'A', '2':'NS', '5':'CNAME', '12':'PTR','16':'TXT', '28':'AAAA', '33':'SRV', '255':'ANY'}
+        for packet in packets_dict[device]:
+            # print(packet)
+
+            dst_mac = packet.eth.dst
+            src_mac = packet.eth.src
+            # print(src_mac, dst_mac)
+            if dst_mac.startswith('33:33'):
+                v6_count[device] = v6_count.get(device, 0) + 1
+            else:
+                v4_count[device] = v4_count.get(device, 0) + 1
+            
+            
+            if packet.mdns.dns_flags_response == '0':
+                query_count[device] = query_count.get(device, 0) + 1
+                
+                
+                # resp_addr = packet.mdns.dns_a
+                
+                if int(packet.mdns.dns_count_queries) > 1:
+                    for line in packet.mdns._get_all_field_lines():
+                        # if line.strip().startswith('Name:'):
+                        if re.match('(.*)(: type)(.*)(, class)(.*)', line) != None:
+                            # print(line.strip())
+                            qry_name = line.strip().split(':')[0].strip()
+                            qry_type = line.strip().split(':')[1].split(',')[0].strip().split(' ')[1]
+                            query_records[(qry_name, qry_type)] = query_records.get((qry_name, qry_type), 0) + 1
+                            
+                else:
+                    qry_name = packet.mdns.dns_qry_name
+                    qry_type = packet.mdns.dns_qry_type
+                    if qry_type in type_dict:
+                        qry_type = type_dict[qry_type]
+                    query_records[(qry_name, qry_type)] = query_records.get((qry_name, qry_type), 0) + 1
+                        
+                
+            else:
+                response_count[device] = response_count.get(device, 0) + 1
+                
+                
+                # if int(packet.mdns.dns_count_answers) > 1:
+                for line in packet.mdns._get_all_field_lines():
+                    # if line.strip().startswith('Name:'):
+                    if re.match('(.*)(: type)(.*)(, class)(.*)', line) != None:
+                        resp_name = line.strip().split(':')[0].strip()
+                        try:
+                            resp_type = line.strip().split(': ')[1].split(',')[0].strip().split(' ')[1]
+                        except: 
+                            print(line)
+                            exit(1)
+                        resp_addr = line.strip().split()[-1]
+                        response_records[(resp_name, resp_type, resp_addr)] = response_records.get((resp_name, resp_type, resp_addr), 0) + 1
+                # else:
+                #     resp_name = packet.mdns.dns_resp_name
+                #     resp_type = packet.mdns.dns_resp_type
+                #     if resp_type == '1':
+                #         resp_addr = packet.mdns.dns_a
+                #     elif resp_type == '28':
+                #         resp_addr = packet.mdns.dns_aaaa
+                #     else:
+                #         resp_addr = ' '
+                    
+                #     if resp_type in type_dict:
+                #         resp_type = type_dict[resp_type]
+                #     response_records[(resp_name, resp_type, resp_addr)] = response_records.get((resp_name, resp_type, resp_addr), 0) + 1
+                
+                
+                
+        if not os.path.exists(cur_out_dir):
+            os.system('mkdir -pv %s' % cur_out_dir)
+        out_file = os.path.join(cur_out_dir, '%s.txt' % device)
+        
+        unique_query_count[device] = len(query_records)
+        unique_response_count[device] = len(response_records)
+        with open(out_file, 'w') as f:
+            # sorted_query_records = sorted([(k,v) for k,v in query_records.items()], key=lambda t:t[1], reverse=True)
+            f.write('Query: %d\n' % len(query_records))
+            for i in query_records:
+                f.write('%s: %d\n' % (i, query_records[i]))    
+            
+            # sorted_query_records = sorted([(k,v) for k,v in query_records.items()], key=lambda t:t[1], reverse=True)
+            f.write('\n\nResponse: %d\n' % len(response_records))
+            for i in response_records:
+                f.write('%s: %d\n' % (i, response_records[i]))   
+            
+    return_list = []
+    for device in dict_dec:
+        # count += 1
+        print(device, v4_count.get(device, 0), v6_count.get(device, 0), query_count.get(device, 0), response_count.get(device, 0))
+        return_list.append([device, v4_count.get(device, 0), v6_count.get(device, 0), query_count.get(device, 0),  unique_query_count.get(device, 0), response_count.get(device, 0), unique_response_count.get(device, 0)])
+    header = ['device', 'v4_count', 'v6_count',  'query_count', 'unique_query_count', 'response_count', 'unique_response_count']
+    return (header, return_list) 
+
     
-def ipv6_analysis():
-    return 0
+def ipv6_analysis(out_dir, dict_dec, packets_dict):
+    cur_out_dir = os.path.join(out_dir, 'protocols','ipv6')
+    dhcpv6_count = {}
+    icmpv6_count = {}
+    other_count = {}
+    # wrong_group_count = {}
+    
+    for device in dict_dec:
+        print('analyzing IPv6 packets...', device)
+        if device not in packets_dict:
+            # nodes_address_count[device] = 0
+            # router_address_count[device] = 0
+            # address_group_count[device] = set()
+            continue
+        # address_group_dict = {}
+        device_protocol_count = {}
+        for packet in packets_dict[device]:
+            
+            # if device in address_group_count:
+            #     address_group_count[device].add(packet.eth.dst)
+            # else:
+            #     address_group_count[device] = set([packet.eth.dst])
+                
+            # address_group_dict[packet.eth.dst] = address_group_dict.get(packet.eth.dst, 0) + 1
+
+            top_layer_name = packet.layers[-1].layer_name
+            if str(top_layer_name).lower()=='dhcpv6':
+                dhcpv6_count[device] = dhcpv6_count.get(device, 0) + 1
+                device_protocol_count['dhcpv6'] = device_protocol_count.get('dhcpv6', 0) + 1
+            elif str(top_layer_name).lower()=='icmpv6':
+                icmpv6_count[device] = icmpv6_count.get(device, 0) + 1
+                device_protocol_count['icmpv6'] = device_protocol_count.get('icmpv6', 0) + 1
+            else:
+                other_count[device] = other_count.get(device, 0) + 1
+                
+                device_protocol_count[str(top_layer_name).lower()] = device_protocol_count.get(str(top_layer_name).lower(), 0) + 1
+
+
+
+        if not os.path.exists(cur_out_dir):
+            os.system('mkdir -pv %s' % cur_out_dir)
+        out_file = os.path.join(cur_out_dir, '%s.txt' % device)
+        
+        with open(out_file, 'w') as f:
+            sorted_device_protocol_count = sorted([(k,v) for k,v in device_protocol_count.items()], key=lambda t:t[1], reverse=True)
+            
+            for i in sorted_device_protocol_count:
+                f.write('%s: %d\n' % (i[0], i[1]))
+            
+    # nodes_address_count_all = 0
+    # router_address_count_all = 0
+    # address_group_count_all = set()
+    count = 0 
+    return_list = []
+    for device in dict_dec:
+        count += 1
+        print(device, dhcpv6_count.get(device, 0), icmpv6_count.get(device, 0), other_count.get(device, 0))
+        # if (bind_request_count.get(device, 0) + share_request_count.get(device, 0) + other_count.get(device, 0)) == 0:
+        #         continue
+        return_list.append([device, dhcpv6_count.get(device, 0), icmpv6_count.get(device, 0), other_count.get(device, 0)])
+
+    header = ['device', 'dhcpv6_count', 'icmpv6_count',  'other_count']
+    return (header, return_list)
 
 
 def dhcpv6_analysis(packet):
@@ -658,12 +843,30 @@ def protocols_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_fil
             return tls_analysis(out_dir, dict_dec, all_packets_captures)
         case 'ipv6':
             return ipv6_analysis(out_dir, dict_dec, all_packets_captures)
+        case 'mdns':
+            return mdns_analysis(out_dir, dict_dec, all_packets_captures)
         case 'udp':
             return udp_analysis(out_dir, dict_dec, all_packets_captures)
         case _:
             return 0 
 
 
-# def protocols_analysis_tshark(out_dir, dict_dec, all_packets, pcap_filter):
-#     # TODO
-#     return 0 
+def protocols_analysis_tshark(out_dir, dict_dec, all_packets, pcap_filter):
+    for protocol in pcap_filter:
+        print(protocol)
+    feature_header = ['number', 'time_epoch', 'time_delta', 'len (size)', 'src mac', 'dst mac', 'Protocol', 'layer 4 protocol code (optional)', 
+                    'TCP/UDP stream (optional)', 'src ip (optional)', 'dst ip (optional)', 'src port (optional)', 'dst port (optional)']
+    cur_out_dir = os.path.join(out_dir, 'low_volume_traffic')
+    if not os.path.exists(cur_out_dir):
+        os.system('mkdir -pv %s' % cur_out_dir)
+    for device in dict_dec:
+        protocols_out_file = os.path.join(cur_out_dir, '%s.csv' % device)
+        cur_all_packets = all_packets[device]['packets'] 
+        with open(protocols_out_file, 'w') as f:
+            write = csv.writer(f)
+            write.writerow(feature_header)
+            write.writerows(cur_all_packets)
+        # write.writerow(overall_result)
+    
+    
+    return 0 

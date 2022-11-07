@@ -3,6 +3,14 @@ from analyser.flow_extraction import extract_single, burst_split
 import os
 import pickle
 from analyser.utils import * 
+from analyser.vis import * 
+
+def output_file_generator(out_dir:str, basename:str, device:str) -> str:
+    tmp_dir = os.path.join(out_dir, basename)
+    if not os.path.exists(tmp_dir):
+        os.system('mkdir -pv %s' % tmp_dir)
+    output_file = os.path.join(tmp_dir, device + '.txt') # Output file
+    return output_file
 
 def addressing_distribution(packets:list[str]) -> list[int]:
     output = [0,0,0]
@@ -41,35 +49,37 @@ def destination_distribution(packets:list[str]) -> int:
 def basic_analysis_output(model_dir, out_dir, dict_dec, all_packets_results):
     # TODO: refactor this part to simplify
     # * distribution output file:
-    tmp_basename = os.path.basename(out_dir)
-    model_file = model_dir+'/distribution_%s.model' % tmp_basename
+    # tmp_basename = os.path.basename(out_dir)
+    # model_file = model_dir+'/distribution_%s.model' % tmp_basename
 
-    if os.path.isfile(model_file):
-        distribution_dicts = pickle.load(open(model_file, 'rb'))
-    else:
-        distribution_dicts = {}
-    
-    distribution_dicts = {}
+    # if os.path.isfile(model_file):
+    #     distribution_dicts = pickle.load(open(model_file, 'rb'))
+    # else:
+    #     distribution_dicts = {}
 
-    # * initialization 
-    if 'addressing_method' in distribution_dicts:
-        addressing_distribution_dict = distribution_dicts['addressing_method']
-    else:
-        addressing_distribution_dict = {}
-    if 'destination' in distribution_dicts:
-        destination_distribution_dict = distribution_dicts['destination']
-    else:
-        destination_distribution_dict = {}
+    # distribution_dicts = {}
+
+    # # * initialization 
+    # if 'addressing_method' in distribution_dicts:
+    #     addressing_distribution_dict = distribution_dicts['addressing_method']
+    # else:
+    #     addressing_distribution_dict = {}
+    # if 'destination' in distribution_dicts:
+    #     destination_distribution_dict = distribution_dicts['destination']
+    # else:
+    #     destination_distribution_dict = {}
     
+    
+    addressing_distribution_dict = {}
+    destination_distribution_dict = {} # how many devices each device talk with
     meaningful_addressing_distribution_dict = {}
 
     # * overall protocol stats
-    # TODO 
     protocol_distribution_overall = {} # {protocol: {device: # of packets}}
     # unicast multicast broadcast: 
     protocol_distribution_per_addressing_method = [{},{},{}] # 0: unicast, 1: multicast, 2: broadcast
 
-    reached_device_distribution_dict = {}
+    reached_device_distribution_dict = {} # how many devices talk with each device 
 
     # * loop through
     for device in dict_dec: 
@@ -207,14 +217,22 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, all_packets_results):
 
 
     # * save distribution results 
-    distribution_dicts = {'addressing_method': addressing_distribution_dict,
-                            'destination': destination_distribution_dict}
+    # distribution_dicts = {'addressing_method': addressing_distribution_dict,
+    #                         'destination': destination_distribution_dict}
     # print(model_file)
-    pickle.dump(distribution_dicts, open(model_file, 'wb'))
+    # pickle.dump(distribution_dicts, open(model_file, 'wb'))
 
-
+    # TODO * devices per protocol:
+    # protocol_distribution_overall
 
     # * num of devices per protocol 
+    if not os.path.exists(os.path.join(out_dir, 'vis')):
+        os.system('mkdir -pv %s' % os.path.join(out_dir, 'vis'))
+        
+    with open(os.path.join(out_dir, 'vis', 'device_per_protcol.txt'), 'w') as ff:
+        for k,v in sorted(protocol_distribution_overall.items()):
+            ff.write(('%s: %d, %s\n') % (k, len(v), v))
+    
     protocol_distribution_device_num = {x: len(protocol_distribution_overall[x]) for x in protocol_distribution_overall}
     plotting.plotting_bar(protocol_distribution_device_num, os.path.join(out_dir, 'vis', 'device_per_protcol') , '# of devices per protocol')
     # * num of packets per protocol
@@ -297,4 +315,8 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, all_packets_results):
 
     # end
 
+    return 0
+
+
+def testing_generator():
     return 0
