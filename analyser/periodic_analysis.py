@@ -21,55 +21,37 @@ from matplotlib.ticker import PercentFormatter
 # root_feature = 'smart-speaker-idle-features/'
 # root_feature = 'unctrl-features/'
 # root_feature = 'idle-2020-features/'
-root_feature = '../data/idle-2021-features/'
+root_feature = '/home/hutr/local_output/idle-dataset/flow_burst/'
 
 device_names = []
 lparas = []
 for csv_file in os.listdir(root_feature):
-        if csv_file.endswith('.csv'):
-            device_name = csv_file.replace('csv', '')
-            device_names.append(device_name)
-            train_data_file = os.path.join(root_feature, csv_file)
+    if csv_file.endswith('.csv'):
+        device_name = csv_file.replace('csv', '')
+        device_names.append(device_name)
+        train_data_file = os.path.join(root_feature, csv_file)
 
 
-            dname = csv_file[:-4]
-            # lfiles.append(train_data_file)
-            # ldnames.append(dname)
+        dname = csv_file[:-4]
+        # lfiles.append(train_data_file)
+        # ldnames.append(dname)
 
-            lparas.append((train_data_file, dname))
-            # print(dname)
+        lparas.append((train_data_file, dname))
+        # print(dname)
+
 lparas_sorted = sorted(lparas,key=lambda x:x[1])
 for v in lparas_sorted:
     print(v[1])    
-# for a, b in enumerate(lparas):
-#     dname = lparas[a][-1]
-#     data = pd.read_csv(lparas[a][0])
 
-#     print('Dname ', dname)
-#     nums = data['network_total'].values
-#     times = data['start_time'].values
-#     protocols = data['protocol'].values
-#     hosts = data['hosts'].fillna('').values
-#     X_feature = data.drop(['device', 'state', 'event','start_time','protocol', 'hosts'], axis=1).fillna(-1)
-#     april_28 = []
-#     # 1556420400: April 27, 23:00
-#     # 1556334000: April 26, 23:00
-#     # 1556247600: April 25, 23:00
-#     for time in times:
-#         if time > 1625587200 and time < 1626192000: 
-#             april_28.append(time)
-#         # if time < 1625587200:
-#         #     print(datetime.fromtimestamp(time))
-#     if len(april_28) == 0:
-#         continue
-#     print(dname, np.max(times), datetime.fromtimestamp(np.max(times)),datetime.fromtimestamp(np.min(times)), datetime.fromtimestamp(np.max(april_28)),datetime.fromtimestamp(np.min(april_28)))
-exit(1)
 
-file_path = 'freq_period/2022_1s_may18'
+file_path = '/home/hutr/local_output/idle-dataset/periodic_detection/'
+if not os.path.exists(file_path):
+    os.system('mkdir -pv %s' % file_path)
+
 for a, b in enumerate(lparas):
     dname = lparas[a][-1]
     if os.path.isfile('%s/%s.txt' % (file_path, dname)):
-        print('%sn exist' % dname)
+        print('%s exist' % dname)
         continue
     data = pd.read_csv(lparas[a][0])
     # if dname !='echoshow5':
@@ -77,51 +59,43 @@ for a, b in enumerate(lparas):
     # if os.path.isdir('%s/%s' % (file_path, dname)):
     #     continue
     print('Dname ', dname)
-    print(data.size)
-    if dname=='govee-led1' or dname=='philips-bulb':
-        pass
-    else:
-        data = data.loc[(data['start_time'] <= 1631120400)]  # 2021 sep: sep3 13pm: 1630688400, sep8 13pm: 1631120400
-        data = data.loc[(data['start_time'] >= 1630688400)] 
-    # 2019 us: >= 1556420400, 1556247600, uk:1556488800 # 2021: 1619425163, 2021: <=1625976281
-    # data = data.loc[(data['start_time'] <= 1556545740)] # unctrl < april 30: 1556545740, 1556334000
-    print(data.size)
+    header = ['timestamp', 'protocol', 'dst', 'flow_length']
     # continue
-    nums = data['network_total'].values
-    times = data['start_time'].values
+    nums = data['flow_length'].values
+    times = data['timestamp'].values
     protocols = data['protocol'].values
-    hosts = data['hosts'].fillna('').values
-    X_feature = data.drop(['device', 'state', 'event','start_time','protocol', 'hosts'], axis=1).fillna(-1)
-    # print(protocols[12])
-    if len(times) == 0:
+    hosts = data['dst'].fillna('').values
+    
+    
+    if len(times) <= 1:
         continue
-    for i in range(len(protocols)):
-        # tmp2 = protocols[i].split(';')
-        if 'TCP' in protocols[i]:
-            protocols[i] = 'TCP'
-        elif 'UDP' in protocols[i]:
-            protocols[i] = 'UDP'
-        elif 'TLS' in protocols[i]:
-            protocols[i] = 'TLS'
-        if ';' in protocols[i]:
-            tmp = protocols[i].split(';')
-            protocols[i] = ' & '.join(tmp)
-            # print(protocols[i])
+    # for i in range(len(protocols)):
+    #     # tmp2 = protocols[i].split(';')
+    #     if 'TCP' in protocols[i]:
+    #         protocols[i] = 'TCP'
+    #     elif 'UDP' in protocols[i]:
+    #         protocols[i] = 'UDP'
+    #     elif 'TLS' in protocols[i]:
+    #         protocols[i] = 'TLS'
+    #     if ';' in protocols[i]:
+    #         tmp = protocols[i].split(';')
+    #         protocols[i] = ' & '.join(tmp)
+    #         # print(protocols[i])
     protocol_set = set(protocols)
     print(protocol_set)
     
-    for i in range(len(hosts)):
-        if hosts[i] != '' and hosts[i] != None:
-            tmp = hosts[i].split(';')
-            hosts[i] = tmp[0]
-        if hosts[i] == None:
-            hosts[i] == 'non'
-        hosts[i] = hosts[i].lower()
-            # print(hosts[i])
+    # for i in range(len(hosts)):
+    #     if hosts[i] != '' and hosts[i] != None:
+    #         tmp = hosts[i].split(';')
+    #         hosts[i] = tmp[0]
+    #     if hosts[i] == None:
+    #         hosts[i] == 'non'
+    #     hosts[i] = hosts[i].lower()
+    #         # print(hosts[i])
     domain_set = set(hosts)
     print(domain_set)
     # continue
-    print(np.max(times))
+    # print(np.max(times))
 
     """
     Set Sampling Rate
@@ -153,27 +127,27 @@ for a, b in enumerate(lparas):
             if protocols[i]== cur_protocol:
                 cur_domain_set.add(hosts[i])
 
-        """
-        merge domain names with the same suffix
-        """
+        # """
+        # merge domain names with the same suffix
+        # """
 
-        for i in cur_domain_set.copy():
-            matched = 0
-            if len(i.split('.')) >= 4:
-                suffix = '.'.join([i.split('.')[-3], i.split('.')[-2], i.split('.')[-1]])
-                for j in cur_domain_set.copy():
-                    if j == i or j.startswith('*'):
-                        continue
-                    elif j.endswith(suffix):
-                        matched = 1
+        # for i in cur_domain_set.copy():
+        #     matched = 0
+        #     if len(i.split('.')) >= 4:
+        #         suffix = '.'.join([i.split('.')[-3], i.split('.')[-2], i.split('.')[-1]])
+        #         for j in cur_domain_set.copy():
+        #             if j == i or j.startswith('*'):
+        #                 continue
+        #             elif j.endswith(suffix):
+        #                 matched = 1
                         
-                        cur_domain_set.remove(j)
-                        print('Remove : ',j)
-                        print(cur_domain_set)
-                if matched == 1:
-                    cur_domain_set.remove(i)
-                    print('Remove : ',i)
-                    cur_domain_set.add('*.'+suffix)
+        #                 cur_domain_set.remove(j)
+        #                 print('Remove : ',j)
+        #                 print(cur_domain_set)
+        #         if matched == 1:
+        #             cur_domain_set.remove(i)
+        #             print('Remove : ',i)
+        #             cur_domain_set.add('*.'+suffix)
         
 
         print('Protocol %s, domain set:' % cur_protocol)
@@ -190,11 +164,11 @@ for a, b in enumerate(lparas):
             cur_feature = []
             filter_feature = []
             for i in range(len(times)):
-                if cur_domain.startswith('*'):
-                    matched_suffix = hosts[i].endswith(cur_domain[2:])
-                else:
-                    matched_suffix = False
-                if protocols[i]== cur_protocol and (matched_suffix or hosts[i] == cur_domain) : #    and nums[i] == 4 and   ''  (max_time-43200)
+                # if cur_domain.startswith('*'):
+                #     matched_suffix = hosts[i].endswith(cur_domain[2:])
+                # else:
+                #     matched_suffix = False
+                if protocols[i]== cur_protocol and hosts[i] == cur_domain: #    and nums[i] == 4 and   ''  (max_time-43200)
                     # and hosts[i] == 'd3h5bk8iotgjvw.cloudfront.net' and hosts[i] == 'device-artifacts-v2.s3.amazonaws.com'
                     # times[i] >= min_time and times[i] <= max_time and
                     # times[i] >= min_time and times[i] <= max_time and
@@ -222,7 +196,7 @@ for a, b in enumerate(lparas):
                     filter_feature.append(True)
                 else:
                     filter_feature.append(False)
-            cur_feature = X_feature[filter_feature]
+            
             
             print('Domain count flow:', domain_count)
             domain_count2 = len(count_dic.keys())

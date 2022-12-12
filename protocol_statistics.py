@@ -21,6 +21,7 @@ from anytree import Node, RenderTree, NodeMixin
 matplotlib.use('Agg')
 
 from analyser.utils import *
+import analyser.plotting as plotting
 
 class ProtocolTree(NodeMixin):  # Add Node feature
     
@@ -229,8 +230,8 @@ def main():
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
 
         device = dev_dir
-        if device[0] <= 'n':
-            continue 
+        # if device[0] <= 'n':
+        #     continue 
         # if device != 'amazon-plug': #  and device != 'google-home-mini':
         #     continue
         # if device != 'echodot3a': #  and device != 'google-home-mini':
@@ -258,8 +259,161 @@ def main():
     if not os.path.exists(model_dir):
         os.system('mkdir -pv %s' % model_dir)                
 
-    protocol_identify_tshark(model_dir, dict_dec)
+    # protocol_identify_tshark(model_dir, dict_dec)
+    log_parser_pyshark(os.path.join(out_dir, 'protocol_statistics_pyshark'), dict_dec)
+    # plot_protocol_statistics(os.path.join(out_dir, 'protocol_statistics_pyshark'), dict_dec)
       
+def log_parser(model_dir, dict_dec):
+    header = ['Device', 'All', 'IP', 'Non-IP', 'TCP', 'UDP', 'IPv6']
+    
+    outputs = []
+    outputs.append(header)
+    for device in dict_dec:
+        cur_file = os.path.join(model_dir, '%s.txt' % device)
+        if not os.path.exists(cur_file):
+            print('%s not exists' % device)
+            continue
+        count_packet_all = 0
+        count_packet_ip = 0
+        count_packet_non_ip = 0 
+        count_packet_tcp = 0 
+        count_packet_udp = 0 
+        count_packet_ipv6 = 0
+        with open(cur_file,'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if line.startswith('Layer 0:'):
+                    cur_dict = json.loads(line.split('Layer 0:')[1])
+                    count_packet_all = cur_dict['eth'][0]
+                elif line.startswith('Layer 1:'):
+                    cur_dict = json.loads(line.split('Layer 1:')[1])
+                    for k in cur_dict:
+                        if 'ip' in k:
+                            count_packet_ip += cur_dict[k][0]
+                            if k == 'ipv6':
+                                count_packet_ipv6 += cur_dict[k][0]
+                        else:
+                            count_packet_non_ip += cur_dict[k][0]
+                
+                elif line.startswith('Layer 2:'):
+                    cur_dict = json.loads(line.split('Layer 2:')[1])
+                    for k in cur_dict:
+                        if k == 'tcp':
+                            count_packet_tcp += cur_dict[k][0]
+                        elif k == 'udp':
+                            count_packet_udp += cur_dict[k][0]
+    
+    
+        cur_line = [device, count_packet_all, count_packet_ip, count_packet_non_ip, count_packet_tcp, count_packet_udp, count_packet_ipv6]
+        outputs.append(cur_line)
+    with open(os.path.join(model_dir, '_overall.csv'),'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(outputs)
+    
+def log_parser_pyshark(model_dir, dict_dec):
+    header = ['Device', 'All', 'IP', 'Non-IP', 'TCP', 'UDP', 'IPv6', 'Unicast', 'Multicast', 'Broadcast']
+    
+    outputs = []
+    outputs.append(header)
+    protocol_dict = {} # key: protocol, value: packets
+    for device in dict_dec:
+        cur_file = os.path.join(model_dir, '%s.txt' % device)
+        if not os.path.exists(cur_file):
+            print('%s not exists' % device)
+            continue
+        count_packet_all = 0
+        count_packet_ip = 0
+        count_packet_non_ip = 0 
+        count_packet_tcp = 0 
+        count_packet_udp = 0 
+        count_packet_ipv6 = 0
+        count_packet_unicast = 0
+        count_packet_multicast = 0
+        count_packet_broadcast = 0
+        with open(cur_file,'r') as f:
+            lines = f.readlines()
+            for line in lines:
+                if line.startswith('Layer 2:'):
+                    cur_dict = json.loads(line.split('Layer 2:')[1])
+                    # print(cur_dict)
+                    for k,v in cur_dict.items():
+                        protocol_dict[k] = protocol_dict.get(k, 0) + int(v)
+                    if 'eth' not in cur_dict:
+                        break
+                    count_packet_all = cur_dict['eth']
+                elif line.startswith('Layer 3:'):
+                    cur_dict = json.loads(line.split('Layer 3:')[1])
+                    for k,v in cur_dict.items():
+                        if k == 'basicxid':
+                            continue
+                        protocol_dict[k] = protocol_dict.get(k, 0) + int(v)
+                    for k in cur_dict:
+                        if 'ip' in k:
+                            count_packet_ip += cur_dict[k]
+                            if k == 'ipv6':
+                                count_packet_ipv6 += cur_dict[k]
+                        else:
+                            count_packet_non_ip += cur_dict[k]
+                
+                elif line.startswith('Layer 4:'):
+                    cur_dict = json.loads(line.split('Layer 4:')[1])
+                    for k,v in cur_dict.items():
+                        protocol_dict[k] = protocol_dict.get(k, 0) + int(v)
+                    for k in cur_dict:
+                        if k == 'tcp':
+                            count_packet_tcp += cur_dict[k]
+                        elif k == 'udp':
+                            count_packet_udp += cur_dict[k]
+                elif line.startswith('Layer 5:'):
+                    cur_dict = json.loads(line.split('Layer 5:')[1])
+                    for k,v in cur_dict.items():
+                        if k == 'DATA':
+                            continue
+                        protocol_dict[k] = protocol_dict.get(k, 0) + int(v)
+                    
+                elif line.startswith('Unicast: '):
+                    count_packet_unicast = int(line.split('Unicast: ')[1])
+                elif line.startswith('Multicast: '):
+                    count_packet_multicast = int(line.split('Multicast: ')[1])
+                elif line.startswith('Broadcast: '):
+                    count_packet_broadcast = int(line.split('Broadcast: ')[1])
+    
+        cur_line = [device, count_packet_all, count_packet_ip, count_packet_non_ip, count_packet_tcp, count_packet_udp, count_packet_ipv6, count_packet_unicast, count_packet_multicast, count_packet_broadcast]
+        outputs.append(cur_line)
+    with open(os.path.join(model_dir, '_overall_pyshark.csv'),'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(outputs)
+    
+    protocol_output = []
+    protocol_output.append(['Protocol', 'Packets'])
+    for k in protocol_dict:
+        protocol_output.append([k, protocol_dict[k]])
+        
+    with open(os.path.join(model_dir, '_packet_per_protocol.csv'),'w') as f:
+        writer = csv.writer(f)
+        writer.writerows(protocol_output)
+    
+
+def plot_protocol_statistics(model_dir, dict_dec):
+    cur_file = os.path.join(model_dir, '_overall_manual_processed.txt' )
+    protocol_dict = {}
+    with open(cur_file, 'r') as f:
+        
+        lines = f.readlines()
+        for line in lines:
+            if line != '\n':
+                protocol_dict[line.split(':')[0]] = int(line.split(':')[1].split('|')[0].strip())
+    
+    print(protocol_dict)
+    plot_out_dir = os.path.join(model_dir, 'vis')
+    if not os.path.exists(plot_out_dir):
+        os.system('mkdir -pv %s' % plot_out_dir)
+    
+    
+    plotting.plotting_bar(protocol_dict, os.path.join(plot_out_dir, 'device_per_protocol'), 'device_per_protocol')
+    
+    # plotting.plotting_bar(protocol_dict, os.path.join(plot_out_dir, 'IP and Non IP'), 'device_per_protocol')
+    
 if __name__ == "__main__":
     
     # c = {'echodot':["/home/hutr/2022-datasets/idle-dataset/echodot/2022-08-23_18.52.25_192.168.10.226.pcap", 

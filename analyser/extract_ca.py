@@ -104,7 +104,7 @@ def analyzePacket(packet, ca_count, common_name_set):
 
 def main():
     # directory = '/home/hutr/2022-datasets/idle-dataset'
-    directory = '/home/hutr/2022-datasets/june-local-dataset'
+    directory = '/home/hutr/2022-datasets/idle-dataset-nov'
     # directory = '/home/hutr/2022-datasets/tagged-local'
 
     for device in os.listdir(directory):
@@ -162,7 +162,7 @@ def main():
 
         device_count[device] = [ca_count, common_name_set]
 
-        with open("tls_output_june.txt", 'a') as f:
+        with open("tls_output_nov.txt", 'a') as f:
             for device in device_count:
                 f.write('----------\n')
                 f.write(device)

@@ -13,9 +13,10 @@ warnings.filterwarnings("ignore")
 def plotting_bar(input_dict, output_dir, title):
     if not os.path.exists(os.path.dirname(output_dir)):
         os.system('mkdir -pv %s' % os.path.dirname(output_dir))
-    if len(input_dict.keys())==0:
+    len_input_dict = len(input_dict.keys())
+    if len_input_dict==0:
         return 0
-    elif len(input_dict.keys())>30:
+    elif len_input_dict>30:
         fig = plt.subplots(figsize=(22.5, 10.5), dpi=150)
         # fig.set_dpi(150)
     else:
@@ -27,18 +28,24 @@ def plotting_bar(input_dict, output_dir, title):
     if len(values)==0:
         return 0
     plt.bar(xs, values)
-    # 
+    
     ax = plt.gca()
-    ax.set_xticklabels(xs,rotation=90)
+    if len_input_dict>15:
+        ax.set_xticklabels(xs,rotation=90) # ha="right"
+    else:
+        ax.set_xticklabels(xs) # ha="right"
     if max(values) > 1000:
         ax.set_yscale('log')
     # plt.xlabel("Devices")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
     # plt.ylabel("No. of students enrolled")
     plt.title("%s" % title)
+    ax.set_axisbelow(True)
+    ax.grid(axis='y', linestyle='dashed')
+    
     # plt.legend((p1[0], p2[0], p3[0]), ('uni', 'multi', 'broadcast'))
-    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.svg'
-    dic = output_dir + '.svg'
+    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.pdf'
+    dic = output_dir + '.pdf'
     plt.savefig(dic)
     return 0
 
@@ -68,8 +75,8 @@ def plotting_mean_bar(input_dict, output_dir, title):
         ax.set_yscale('log')
     ax.set_title('%s' % title)
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.svg'
-    dic = output_dir + '.svg'
+    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.pdf'
+    dic = output_dir + '.pdf'
     plt.savefig(dic)
 
     return 0
@@ -122,8 +129,8 @@ def plotting_multicolumn_bar(input_dict, output_dir, title):
     # plt.ylabel("No. of students enrolled")
     plt.title("%s" % title)
     plt.legend((p1[0], p2[0], p3[0]), ('uni', 'multi', 'broadcast'))
-    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.svg'
-    dic = output_dir + '.svg'
+    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.pdf'
+    dic = output_dir + '.pdf'
     plt.savefig(dic)
 
     return 0 
@@ -162,8 +169,8 @@ def plotting_stacked_bar(input_dict, output_dir, title):
     # plt.ylabel("No. of students enrolled")
     plt.title("%s" % title)
     plt.legend((p1[0], p2[0], p3[0]), ('uni', 'multi', 'broadcast'))
-    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.svg'
-    dic = output_dir + '.svg'
+    # dic = output_dir + '/'+ os.path.basename(output_dir) + '.pdf'
+    dic = output_dir + '.pdf'
     plt.savefig(dic)
     return 0
 

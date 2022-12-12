@@ -24,3 +24,9 @@ python3 analysis.py ~/2022-datasets/idle-dataset ~/local_output/idle-dataset/ -f
 
 ### generate connected graph
 python3 graph_generator.py ~/local_output/idle-dataset/tcp_output vis
+
+### parse protocol logs
+python3 analyser/protocols/dhcp.py
+
+### extract CA from TLS handshakes
+python3 analyser/extract_ca.py 
