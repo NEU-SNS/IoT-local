@@ -1,8 +1,25 @@
-import numpy as np
-from subprocess import Popen, PIPE
-import ipaddress
+import sys
 import os
+import argparse
+import numpy as np
+import pickle
+from multiprocessing import Process
+from multiprocessing import Manager
+from subprocess import Popen, PIPE
+from collections import Counter
+from copy import deepcopy
+import csv
+import matplotlib
+import pyshark
+import time
+import pandas as pd
+import threading
+import ipaddress
 import json
+import time
+
+matplotlib.use('Agg')
+
 
 MAC_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/devices.txt'
 IP_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/ip_dict.txt'

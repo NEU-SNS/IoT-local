@@ -1,9 +1,7 @@
-from . import plotting
 from analyser.flow_extraction import extract_single, burst_split
-import os
-import pickle
 from analyser.utils import * 
 from analyser.vis import * 
+from . import plotting
 
 def output_file_generator(out_dir:str, basename:str, device:str) -> str:
     tmp_dir = os.path.join(out_dir, basename)

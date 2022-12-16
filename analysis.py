@@ -1,30 +1,13 @@
-import sys
-import os
-import argparse
-import numpy as np
-import pickle
-from multiprocessing import Process
-from multiprocessing import Manager
-from subprocess import Popen, PIPE
-from collections import Counter
-from copy import deepcopy
-import csv
-import matplotlib
-import pyshark
-import time
-import pandas as pd
-import threading
-
-matplotlib.use('Agg')
-
 from analyser.utils import *
 from analyser.flow_extraction import extract_single, burst_split
-import analyser.flow_extraction_new as flow_extraction_new
 import analyser.plotting as plotting
 from analyser.extract_ca import analyzePacket
 from analyser.protocols_analysis import * 
 from analyser.all_device_analysis import * 
 from analyser.vis import *
+from analyser.protocol_identification import * 
+
+
 # import nest_asyncio
 # nest_asyncio.apply()
 
@@ -42,6 +25,7 @@ def print_usage(is_error:bool) -> None:
 # TODO
 # ! Bug, need to recreat all_packets_results instead of edit it 
 def group_filter(dict_dec, all_packets_results, func, packet_index):
+    new_all_packets_results = {}
     for device in all_packets_results:
         cur_packets = all_packets_results[device]['packets']
         new_packets = []
@@ -49,8 +33,9 @@ def group_filter(dict_dec, all_packets_results, func, packet_index):
             # print(packet[packet_index], func.__name__)
             if func(packet[packet_index]):
                 new_packets.append(packet)
-        all_packets_results[device]['packets'] = new_packets
-    return all_packets_results
+        new_all_packets_results[device] = {'packets': new_packets}
+        # new_all_packets_results[device]['packets'] = new_packets
+    return new_all_packets_results
 
 def BC_filter(dict_dec, all_packets_results):
     return group_filter(dict_dec, all_packets_results, is_broadcast, 5)
@@ -61,20 +46,15 @@ def MC_filter(dict_dec, all_packets_results):
 def ipv6_filter(dict_dec, all_packets_results):
     return group_filter(dict_dec, all_packets_results, is_ipv6, 9)
 
-def MC_analysis(model_dir, dict_dec, all_packets_results):
-    for device in dict_dec:
-        pass
-    return 0 
 
 def protocol_filter(dict_dec, all_packets_results, protocol):
     # filter a group of protocols 
-    # TODO bugs
-    # if protocol=='broadcast':
-    #     return BC_filter(dict_dec, all_packets_results)
-    # elif protocol=='multicast':
-    #     return MC_filter(dict_dec, all_packets_results)
-    # # elif protocol=='ipv6':
-    # #     return ipv6_filter(dict_dec, all_packets_results)
+    if protocol=='broadcast':
+        return BC_filter(dict_dec, all_packets_results)
+    elif protocol=='multicast':
+        return MC_filter(dict_dec, all_packets_results)
+    elif protocol=='ipv6':
+        return ipv6_filter(dict_dec, all_packets_results)
     
     # protocol filter 
     protocol_lower = []
@@ -95,37 +75,6 @@ def protocol_filter(dict_dec, all_packets_results, protocol):
 
     return all_packets_results
 
-def per_protocol_analysis(input_wrapper):
-    out_dir, dict_dec, all_packets, pcap_filter = input_wrapper
-    # tmp_com = 0
-    # for i in range(len(list(all_packets.keys()))):
-    #     if len(all_packets[list(all_packets.keys())[i]]) > 0:
-    #         tmp_com = all_packets[list(all_packets.keys())[i]][0]
-    #         break
-    
-    
-    
-    if isinstance(pcap_filter, list):
-        return per_protocol_analysis_tshark(out_dir, dict_dec, all_packets, pcap_filter)
-    else:
-        print(pcap_filter)
-        return per_protocol_analysis_pyshark(out_dir, dict_dec, all_packets, pcap_filter)
-
-def per_protocol_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_filter):
-    
-    print('per_protocol_analysis_pyshark')
-    # print(all_packets_captures)
-    return protocols_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_filter)
-
-def per_protocol_analysis_tshark(out_dir, dict_dec, all_packets_results, pcap_filter):
-    print('per_protocol_analysis_tshark')
-    # protocol = 'multicast'
-    # mc_packets = protocol_filter(dict_dec, all_packets_results, protocol)
-
-    # tcp_packets = protocol_filter(dict_dec, all_packets_results, protocol)
-    
-    new_packets = protocol_filter(dict_dec, all_packets_results, pcap_filter)
-    return protocols_analysis_tshark(out_dir, dict_dec, new_packets, pcap_filter)
 
 
 
@@ -444,9 +393,10 @@ def pyshark_idle_input(dict_dec:dict, out_dir:str, pcap_filter:str)->dict[str:li
 
 
 def extract_pcap_pyshark(pcap_file:str, pcap_filter:str, output_pcap):
+    # TODO Change the func name. It's not using pyshark, it's called protocol fileter
     capture = 0
     if pcap_filter=='multicast':
-        pcap_filter='eth.addr!=ff:ff:ff:ff:ff:ff&&eth.dst.ig==1'
+        pcap_filter="eth.addr!=ff:ff:ff:ff:ff:ff&&eth.dst.ig==1"
     if output_pcap == '':
         print(pcap_file, pcap_filter)
         
@@ -455,10 +405,11 @@ def extract_pcap_pyshark(pcap_file:str, pcap_filter:str, output_pcap):
         return capture
 
     # print(pcap_file, pcap_filter, output_pcap)
+    # print('tshark -r %s -Y "%s" -w %s' % (str(pcap_file), pcap_filter, str(output_pcap)))
     # capture = pyshark.FileCapture(str(pcap_file), display_filter=pcap_filter, output_file=str(output_pcap)) 
-
+    # exit(1)
     # tshark is faster than pyshark in saving filtered traffic into a new pcap file
-    os.system('tshark -r %s -Y %s -w %s' % (str(pcap_file), pcap_filter, str(output_pcap)))
+    os.system('tshark -r %s -Y "%s" -w %s' % (str(pcap_file), pcap_filter, str(output_pcap)))
     return 0
     
 
@@ -477,16 +428,18 @@ def main():
     parser = argparse.ArgumentParser(add_help=False)
     parser.add_argument("in_dir")
     parser.add_argument("out_dir")
-    parser.add_argument("-f", dest="tshark_filter", default="")
+    parser.add_argument("-f", "--tsharkfilter", dest="tshark_filter", default="")
+    parser.add_argument("-b", "--basic",dest="basic_analysis", action='store_const', default=False, const=True)
+    parser.add_argument("-a", "--addressing", dest="addressing", default="")
     args = parser.parse_args()
-    
-    # in_dir = sys.argv[1]
-    # out_dir = sys.argv[2]
+
     in_dir = args.in_dir
     out_dir = args.out_dir
     # str_num_proc = sys.argv[3] if len(sys.argv) == 4 else "5"
 
     cur_filter = args.tshark_filter
+    basic_analysis_flag = args.basic_analysis
+    addressing_method_filter = args.addressing
     
     # check in_dir
     errors = False
@@ -526,7 +479,7 @@ def main():
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
 
         device = dev_dir
-        # if device != 'amazon-plug' and device != 'google-home-mini':
+        # if device != 'amazon-plug':  # and device != 'google-home-mini'
         #     continue
         # if device != 'echodot': #  and device != 'google-home-mini':
         #     continue
@@ -562,30 +515,47 @@ def main():
     # # pcap_filter = "not tcp.analysis.duplicate_ack and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
     # pcap_filter = 'frame.time>="2022-08-25 12:00:00" and frame.time<="2022-08-29 11:59:59"'
     pcap_filter = ""
-    # all_packets_results = idle_inputs(dict_dec, model_dir, 'packets', pcap_filter)
+    tmp_models_dir = 'packets'
     
-    # # # # basic output: charts
-    # basic_analysis_output(model_dir, out_dir,  dict_dec, all_packets_results)
+    if addressing_method_filter!= "":
+        # * unicast ethenet traffic only
+        if addressing_method_filter == "eth_unicast":
+            pcap_filter = "!ip and eth.dst.ig==0"
+            out_dir = os.path.join(out_dir,'eth_unicast')
+            tmp_models_dir = 'unicast_nonip'
+        
+        # * broadcast and multicast traffic 
+        elif addressing_method_filter == "bcmc":
+            pcap_filter = "eth.dst.ig==1"
+            out_dir = os.path.join(out_dir,'bcmc')
+            tmp_models_dir = 'bcmc'
+        
+        # * unicast traffic 
+        elif addressing_method_filter == 'unicast':
+            pcap_filter = "eth.dst.ig==0"
+            out_dir = os.path.join(out_dir,'unicast')
+            tmp_models_dir = 'unicast'
     
-    # # protocol analysis 
+    
+    if basic_analysis_flag:
+        all_packets_results = idle_inputs(dict_dec, model_dir, tmp_models_dir, pcap_filter)
+        
+        
+        
+        # basic output: charts
+        basic_analysis_output(model_dir, out_dir,  dict_dec, all_packets_results)
+        
+        if addressing_method_filter == "bcmc":
+            bc_packets_results = protocol_filter(dict_dec, all_packets_results, 'broadcast')
+            basic_analysis_output(model_dir, os.path.join(out_dir,'bc'),  dict_dec, bc_packets_results)
+
+            mc_packets_results = protocol_filter(dict_dec, all_packets_results, 'multicast')
+            basic_analysis_output(model_dir, os.path.join(out_dir,'mc'),  dict_dec, mc_packets_results)
+    
+    # # rare protocol analysis 
     # tshark_protocol_filter = ['ssl', 'tlsv1','AJP13', 'VITA', 'ESO', 'RRoCE', 'BAT_GW', 'BFD', 'AX4000', 'BAT_VIS', 'DHCPv6', 'CoAP']
     # multiprocessing_wrapper(out_dir, dict_dec, all_packets_results, tshark_protocol_filter)
-    
-    # * unicast ethenet traffic only
-    # pcap_filter = "!ip and eth.dst.ig==0"
-    # unicast_nonip_results = idle_inputs(dict_dec, model_dir, 'unicast_nonip', pcap_filter)
-    # basic_analysis_output(model_dir, os.path.join(out_dir,'eth_unicast'),  dict_dec, unicast_nonip_results)
 
-    # * broadcast and multicast traffic 
-    # pcap_filter = "eth.dst.ig==1"
-    # all_packets_results = idle_inputs(dict_dec, model_dir, 'bcmc', pcap_filter)
-    # basic_analysis_output(model_dir, os.path.join(out_dir,'bcmc'),  dict_dec, all_packets_results)
-
-    # bc_packets_results = protocol_filter(dict_dec, all_packets_results, 'broadcast')
-    # basic_analysis_output(model_dir, os.path.join(out_dir,'bc'),  dict_dec, bc_packets_results)
-
-    # mc_packets_results = protocol_filter(dict_dec, all_packets_results, 'multicast')
-    # basic_analysis_output(model_dir, os.path.join(out_dir,'mc'),  dict_dec, mc_packets_results)
 
     
     # cur_filter = 'dhcp'
@@ -607,6 +577,7 @@ def main():
         # return 0
         cur_filter = ""
         all_packets_captures = pyshark_idle_input_threading(dict_dec, out_dir, cur_filter)
+        # multiprocessing_protocol_identification from analser.protocol_identification module
         multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captures)
     
 
@@ -686,251 +657,69 @@ def run_protocol_analysis(input_wrapper, procnum, return_dict):
         procnum (_type_): process number 
         return_dict (_type_): multiprocessing safe output dictionary
     """
+    # call per_protocol_analysis
     return_dict[procnum] = per_protocol_analysis(input_wrapper)
 
-def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captures):
-    """The mutliprocessing wrapper for per protocol identification 
+
+def per_protocol_analysis(input_wrapper):
+    """ determine which analysis should it run: tshark or pyshark
 
     Args:
-        out_dir (_type_): output dir 
-        dict_dec (_type_): dictionary of devices.
-        all_packets_captures (_type_): dictionary of packets for each device 
+        input_wrapper (_type_): _description_
+
+    Returns:
+        _type_: _description_
     """
-    num_proc = 20
-    in_dev = [ [] for _ in range(num_proc) ]
-    index = 0 
-    for device in dict_dec:
-        in_dev[index % num_proc].append(device)
-        index += 1
+    out_dir, dict_dec, all_packets, pcap_filter = input_wrapper
+    # tmp_com = 0
+    # for i in range(len(list(all_packets.keys()))):
+    #     if len(all_packets[list(all_packets.keys())[i]]) > 0:
+    #         tmp_com = all_packets[list(all_packets.keys())[i]][0]
+    #         break
 
-    print('Mutliprocessing... ', len(in_dev))
-    procs = []
-    manager = Manager()
-    return_dict = manager.dict()
-    for i in range(len(in_dev)):
-        device_list = in_dev[i]
-        if len(device_list)==0:
-            continue
-        new_packets_captures = {}
-        for device in device_list:
-            if device not in all_packets_captures:
-                continue
-            new_packets_captures[device] = all_packets_captures[device]
+    if isinstance(pcap_filter, list):
+        return per_protocol_analysis_tshark(out_dir, dict_dec, all_packets, pcap_filter)
+    else:
+        print(pcap_filter)
+        return per_protocol_analysis_pyshark(out_dir, dict_dec, all_packets, pcap_filter)
 
-        p = Process(target=protocol_identification_wrapper, args=(device_list, new_packets_captures, i ,return_dict, out_dir))
-        procs.append(p)
-        p.start()
-
-    for p in procs:
-        p.join()
-    
-    return 0
-
-    protocols_out_dir = os.path.join(out_dir, 'protocol_statistics_pyshark')
-    if not os.path.exists(protocols_out_dir):
-        os.system('mkdir -pv %s' % protocols_out_dir) 
-        
-    
-    protocol_dict = {}
-    addressing_method_list = {}
-    for k, v in return_dict.items():
-        # print(k,v)
-        protocol_dict = protocol_dict | v[0]
-        addressing_method_list = addressing_method_list | v[1]
-
-    count_all = {}
-    count_ip = {}
-    count_v6 = {}
-    count_tcp = {}
-    count_udp = {}
-    count_tls = {}
-    protocol_set = set()
-    protocol_set.add('eth')
-    for dev in protocol_dict:
-        count_all[dev] = protocol_dict[dev]['2'].get('eth', 0)
-        count_ip[dev] = 0
-        count_v6[dev] = 0
-        count_tcp[dev] = 0
-        count_udp[dev] = 0
-        count_tls[dev] = 0
-        layer3_protocol = protocol_dict[dev]['3']
-        layer4_protocol = protocol_dict[dev]['4']
-        layer5_protocol = protocol_dict[dev]['5']
-        # count IP and Non IP
-        for cur_protocol in layer3_protocol:
-            protocol_set.add(cur_protocol)
-            if cur_protocol == 'ip' or cur_protocol == 'ipv6':
-                count_ip[dev] += layer3_protocol[cur_protocol]
-                # IPv4 and IPv6
-                if cur_protocol == 'ipv6':
-                    count_v6[dev] += layer3_protocol[cur_protocol]
-
-        # UDP and TCP
-        for cur_protocol in layer4_protocol:
-            protocol_set.add(cur_protocol)
-            if cur_protocol == 'tcp':
-                count_tcp[dev] += layer4_protocol[cur_protocol]
-            elif cur_protocol == 'udp':
-                count_udp[dev] += layer4_protocol[cur_protocol]
-
-        # tls
-        for cur_protocol in layer5_protocol:
-            protocol_set.add(cur_protocol)
-            if cur_protocol == 'tls' or cur_protocol == 'ssl':
-                count_tls[dev] += layer5_protocol[cur_protocol]
-
-    protocol_device_count = {}
-    for i in protocol_set:
-        protocol_device_count[i] = set()
-        
-    for dev in protocol_dict:
-        with open(os.path.join(protocols_out_dir, '%s.txt' % dev), 'w') as f:
-            f.write('Overall: %d\n' % count_all[dev])
-            f.write('IP: %d\n' % count_ip[dev])
-            f.write('IPv6: %d\n' % count_v6[dev])
-            f.write('TCP: %d\n' % count_tcp[dev])
-            f.write('UDP: %d\n' % count_udp[dev])
-            f.write('TLS: %d\n' % count_tls[dev])
-            
-            for k in protocol_dict[dev]:
-                f.write('Layer %s: %s\n' % (k, json.dumps(protocol_dict[dev][k]))) 
-                for j in protocol_dict[dev][k]:
-                    protocol_device_count[j].add(dev)
-            f.write('\n')
-            f.write('Unicast: %d\n' % addressing_method_list[dev][0])
-            f.write('Multicast: %d\n' % addressing_method_list[dev][1])
-            f.write('Broadcast: %d\n' % addressing_method_list[dev][2])
-    
-    with open(os.path.join(protocols_out_dir, '_overall.txt'), 'w') as f:
-
-            
-        sorted_protocol_device_count = sorted([(k,len(v)) for k,v in protocol_device_count.items()], key=lambda t:t[1], reverse=True)
-        for i in sorted_protocol_device_count:
-            # if i[0] == 'eth':
-            #     continue
-            f.write('%s: %d | %s\n\n' % (i[0], i[1], ', '.join(list(protocol_device_count[i[0]]))))
-            
-
-def protocol_identification_wrapper(dict_dec, all_packets_captures, procnum, return_dict, out_dir):
-    return_dict[procnum] = protocol_identification(dict_dec, all_packets_captures, out_dir)
-
-def protocol_identification(dict_dec, all_packets_captures, out_dir):
-    """_summary_
+def per_protocol_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_filter):
+    """call protocols_analysis_pyshark in analyzer.protocols_analysis module
 
     Args:
-        out_dir (_type_): output dir
-        dict_dec (_type_): dict of devices with input files 
-        all_packets_captures (_type_): pyshark capture objects 
+        out_dir (_type_): _description_
+        dict_dec (_type_): _description_
+        all_packets_captures (_type_): _description_
+        pcap_filter (_type_): _description_
+
+    Returns:
+        _type_: _description_
     """
-    global mac_dic, inv_mac_dic
-    protocol_dict = {}
-    addressing_method_list = {}
-    for device in dict_dec:
-        tmp_protocols = {'2':{}, '3':{}, '4':{}, '5':{}}
-        tmp_addressing_method_list = [0,0,0]
-        # for f in dict_dec[device]:
+    print('per_protocol_analysis_pyshark')
+    # print(all_packets_captures)
+    return protocols_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_filter)
 
-        cur_packets_set = all_packets_captures[device]
-        tmp_count = 0
-        periodic_detection_packets = []## packet.frame_info.time_delta
-        my_device_mac =  mac_dic[device]
-        
-        t1 = time.time()
-        for cur_packets in cur_packets_set:
-            for packet in cur_packets:
-                tmp_count += 1
-                if tmp_count%10000 == 0:
-                    print(tmp_count, time.time()-t1)
-                is_UDP = False
-                cur_layers = []
-                sport = '0'
-                dport = '0'
-                for i in packet.layers:
-                    cur_layers.append(i.layer_name)
+def per_protocol_analysis_tshark(out_dir, dict_dec, all_packets_results, pcap_filter):
+    """call per_protocol_analysis_tshark in analyzer.protocols_analysis module
+    # TODO This one is rarely used. Should consider remove it 
 
-                # unicast multicast broadcast:
-                tmp_addressing_method_list[addressing_method(packet.eth.dst)] += 1
-                
-                # layer 2 eth: all packet count 
-                # print(tmp_protocols)
-                tmp_protocols['2'][cur_layers[0]] = tmp_protocols['2'].get(cur_layers[0], 0) + 1
-                
-                # layer 3: IP or Non IP, v4 and v6
-                tmp_protocols['3'][cur_layers[1]] = tmp_protocols['3'].get(cur_layers[1], 0) + 1
-                highest_protocol = cur_layers[1]
-                # layer 4: TCP UDP (or other layer 3 protocols built upon IP)
-                if len(cur_layers) > 2:
-                    tmp_protocols['4'][cur_layers[2]] = tmp_protocols['4'].get(cur_layers[2], 0) + 1
-                    if cur_layers[2] == 'udp':
-                        is_UDP = True
-                        sport = packet.udp.srcport
-                        dport = packet.udp.dstport
-                    elif cur_layers[2] == 'tcp':
-                        sport = packet.tcp.srcport
-                        dport = packet.tcp.dstport
-                    highest_protocol = cur_layers[2]
-                    
-                # layer 5
-                if len(cur_layers) > 3 and cur_layers[2] != 'icmp' and cur_layers[3] != 'data' and cur_layers[3] != 'ajp13':
-                    tmp_layer_name = cur_layers[3]
-                    if tmp_layer_name == 'tcp.segments' and len(cur_layers) > 4:
-                        tmp_layer_name = cur_layers[4]
-                        
-                    if is_UDP and tmp_layer_name not in ['dns','mdns', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome'] and len(packet.udp.payload) > 350:
-                        # print(tmp_layer_name)
-                        if check_upnp(packet.udp.payload): 
-                            # is UPnP/SSDP
-                            tmp_layer_name = 'ssdp'
-                    
-                    tmp_protocols['5'][tmp_layer_name] = tmp_protocols['5'].get(tmp_layer_name, 0) + 1
-                    highest_protocol = tmp_layer_name
-                # print(tmp_protocols)
-                
-                # if is_UDP and cur_layers.index('udp') != len(cur_layers)-1 and \
-                    # cur_layers[cur_layers.index('udp')+1] not in ['dns','mdns','data', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome']:
-                src_mac = packet.eth.src
-                dst_mac = packet.eth.dst
-                if dst_mac == my_device_mac:
-                    tmp_mac = src_mac
-                    src_mac = dst_mac
-                    dst_mac = tmp_mac
-                    tmp_port = sport
-                    sport = dport
-                    dport = tmp_port
-                
-                if dst_mac in inv_mac_dic:
-                    dst_dev = inv_mac_dic[dst_mac]
-                else:
-                    dst_dev = dst_mac
-                periodic_detection_packets.append([packet.sniff_timestamp, packet.frame_info.time_delta, highest_protocol, dst_dev, sport, dport])
-                
-        
-        flows = flow_extraction_new.extract_single(periodic_detection_packets)
-        bursts = flow_extraction_new.burst_split(flows)
-        print(tmp_count, time.time()-t1)
-        
-        
-        
-        header = ['time_epoch', 'time_delta', 'protocol', 'dst', 'sport', 'dport'] 
-        flow_extraction_new.flows_output(bursts, out_dir, device)
-        
-        protocol_dict[device] = tmp_protocols
-        addressing_method_list[device] = tmp_addressing_method_list
-    return [protocol_dict, addressing_method_list]
-        
-def check_upnp(udp_payload):
-    udp_payload = ''.join(udp_payload.split(':'))
-    # print(udp_payload)
-    try:
-        decoded_payload = bytes.fromhex(udp_payload).decode('utf-8')
-        # print(decoded_payload)
-    except:
-        return False
-    if 'ssdp' in decoded_payload.lower() or 'upnp' in decoded_payload.lower():
-        return True
-    return False
+    Args:
+        out_dir (_type_): _description_
+        dict_dec (_type_): _description_
+        all_packets_results (_type_): _description_
+        pcap_filter (_type_): _description_
 
+    Returns:
+        _type_: _description_
+    """
+    print('per_protocol_analysis_tshark')
+    # protocol = 'multicast'
+    # mc_packets = protocol_filter(dict_dec, all_packets_results, protocol)
 
+    # tcp_packets = protocol_filter(dict_dec, all_packets_results, protocol)
+    
+    new_packets = protocol_filter(dict_dec, all_packets_results, pcap_filter)
+    return protocols_analysis_tshark(out_dir, dict_dec, new_packets, pcap_filter)
 
 if __name__ == "__main__":
     main()

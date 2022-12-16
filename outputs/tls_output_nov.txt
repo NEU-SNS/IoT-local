@@ -1,0 +1,386 @@
+----------
+amazon-plug
+----------
+----------
+amcrest-cam-wired
+----------
+----------
+appletv-wifi
+----------
+----------
+aqara-hub
+----------
+----------
+arlo-doorbell
+----------
+----------
+arlo-q-cam
+----------
+----------
+blueair-purifier
+----------
+----------
+brewer
+----------
+----------
+bulb1
+----------
+----------
+chromecast-googletv
+----------
+Usonia us-east1 ICA -> 1372 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 4F969A268D7A02960F0F767854BC3CB7 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 522FFC5F054836969FFA04EEEE6EDA74 7A9F5FC0D1878A5F816B56DC7AF3FD18 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 1390 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 1394 , common name: Chromecast ICA 14 (Video Assist 2 Chromecast ICA 21 (ATV Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 18 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+Chromecast ICA 21 (ATV -> 2 , common name: DD2NPBA FA8FCA7CAE70
+Chromecast ICA 14 (Video Assist 2 -> 2 , common name: AB0R1VN FA8FCA9F9053
+----------
+dlink-camera
+----------
+----------
+dryer
+----------
+----------
+echodot
+----------
+192.168.12.114 -> 2146 , common name: 192.168.12.114
+0.0.0.0 -> 764 , common name: 0.0.0.0
+192.168.10.148 -> 176 , common name: 192.168.10.148
+192.168.10.176 -> 175 , common name: 192.168.10.176
+192.168.10.182 -> 242 , common name: 192.168.10.182
+192.168.11.108 -> 302 , common name: 192.168.11.108
+192.168.10.238 -> 243 , common name: 192.168.10.238
+192.168.10.129 -> 244 , common name: 192.168.10.129
+----------
+echodot3a
+----------
+----------
+echodot3b
+----------
+0.0.0.0 -> 2380 , common name: 0.0.0.0
+192.168.10.176 -> 160 , common name: 192.168.10.176
+192.168.12.114 -> 179 , common name: 192.168.12.114
+192.168.11.108 -> 188 , common name: 192.168.11.108
+192.168.10.238 -> 227 , common name: 192.168.10.238
+192.168.10.129 -> 127 , common name: 192.168.10.129
+192.168.10.182 -> 158 , common name: 192.168.10.182
+192.168.10.148 -> 158 , common name: 192.168.10.148
+----------
+echodot3c
+----------
+192.168.10.238 -> 1935 , common name: 192.168.10.238
+0.0.0.0 -> 846 , common name: 0.0.0.0
+192.168.12.114 -> 242 , common name: 192.168.12.114
+192.168.10.129 -> 152 , common name: 192.168.10.129
+192.168.10.148 -> 172 , common name: 192.168.10.148
+192.168.10.182 -> 171 , common name: 192.168.10.182
+192.168.11.108 -> 185 , common name: 192.168.11.108
+192.168.10.176 -> 172 , common name: 192.168.10.176
+----------
+echodot3d
+----------
+0.0.0.0 -> 2282 , common name: 0.0.0.0
+192.168.12.114 -> 229 , common name: 192.168.12.114
+192.168.10.129 -> 117 , common name: 192.168.10.129
+192.168.10.176 -> 157 , common name: 192.168.10.176
+192.168.11.108 -> 185 , common name: 192.168.11.108
+192.168.10.148 -> 155 , common name: 192.168.10.148
+192.168.10.238 -> 224 , common name: 192.168.10.238
+192.168.10.182 -> 155 , common name: 192.168.10.182
+----------
+echodot4a
+----------
+0.0.0.0 -> 2349 , common name: 0.0.0.0
+192.168.12.114 -> 179 , common name: 192.168.12.114
+192.168.10.129 -> 128 , common name: 192.168.10.129
+192.168.10.176 -> 211 , common name: 192.168.10.176
+192.168.11.108 -> 186 , common name: 192.168.11.108
+192.168.10.148 -> 155 , common name: 192.168.10.148
+192.168.10.238 -> 173 , common name: 192.168.10.238
+192.168.10.182 -> 156 , common name: 192.168.10.182
+----------
+echoflex1
+----------
+0.0.0.0 -> 2771 , common name: 0.0.0.0
+192.168.10.176 -> 217 , common name: 192.168.10.176
+192.168.10.148 -> 258 , common name: 192.168.10.148
+192.168.10.182 -> 214 , common name: 192.168.10.182
+192.168.10.129 -> 222 , common name: 192.168.10.129
+192.168.10.238 -> 222 , common name: 192.168.10.238
+192.168.12.114 -> 177 , common name: 192.168.12.114
+192.168.11.108 -> 180 , common name: 192.168.11.108
+----------
+echoflex2
+----------
+192.168.10.176 -> 1781 , common name: 192.168.10.176
+0.0.0.0 -> 746 , common name: 0.0.0.0
+192.168.12.114 -> 175 , common name: 192.168.12.114
+192.168.10.129 -> 127 , common name: 192.168.10.129
+192.168.10.148 -> 217 , common name: 192.168.10.148
+192.168.10.238 -> 172 , common name: 192.168.10.238
+192.168.10.182 -> 157 , common name: 192.168.10.182
+192.168.11.108 -> 186 , common name: 192.168.11.108
+----------
+echoplus
+----------
+192.168.10.129 -> 1566 , common name: 192.168.10.129
+0.0.0.0 -> 594 , common name: 0.0.0.0
+192.168.12.114 -> 244 , common name: 192.168.12.114
+192.168.10.238 -> 154 , common name: 192.168.10.238
+192.168.10.176 -> 127 , common name: 192.168.10.176
+192.168.10.182 -> 133 , common name: 192.168.10.182
+192.168.11.108 -> 186 , common name: 192.168.11.108
+192.168.10.148 -> 130 , common name: 192.168.10.148
+----------
+echoshow5
+----------
+192.168.10.148 -> 1822 , common name: 192.168.10.148
+0.0.0.0 -> 727 , common name: 0.0.0.0
+192.168.12.114 -> 176 , common name: 192.168.12.114
+192.168.10.129 -> 130 , common name: 192.168.10.129
+192.168.10.182 -> 216 , common name: 192.168.10.182
+192.168.10.176 -> 217 , common name: 192.168.10.176
+192.168.10.238 -> 172 , common name: 192.168.10.238
+192.168.11.108 -> 183 , common name: 192.168.11.108
+----------
+echospot
+----------
+192.168.10.182 -> 1788 , common name: 192.168.10.182
+0.0.0.0 -> 685 , common name: 0.0.0.0
+192.168.12.114 -> 242 , common name: 192.168.12.114
+192.168.10.129 -> 134 , common name: 192.168.10.129
+192.168.10.148 -> 215 , common name: 192.168.10.148
+192.168.10.238 -> 173 , common name: 192.168.10.238
+192.168.11.108 -> 184 , common name: 192.168.11.108
+192.168.10.176 -> 157 , common name: 192.168.10.176
+----------
+facebook-portal-mini
+----------
+----------
+firetv
+----------
+----------
+fridge
+----------
+----------
+google-home-mini
+----------
+Usonia us-east1 ICA -> 945 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 4F969A268D7A02960F0F767854BC3CB7 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 522FFC5F054836969FFA04EEEE6EDA74 7A9F5FC0D1878A5F816B56DC7AF3FD18 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 957 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 965 , common name: Chromecast ICA 7 (Audio Assist 2 Chromecast ICA 16 (Audio Assist 4 Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 12 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+Chromecast ICA 7 (Audio Assist 2 -> 4 , common name: L487YL FA8FCA78818B
+Chromecast ICA 16 (Audio Assist 4 -> 4 , common name: AP6BI3F FA8FCA8AB668
+----------
+google-home-mini2
+----------
+Usonia us-east1 ICA -> 691 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 522FFC5F054836969FFA04EEEE6EDA74 7A9F5FC0D1878A5F816B56DC7AF3FD18 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 711 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 711 , common name: Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 20 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+----------
+google-home-mini3
+----------
+Usonia us-east1 ICA -> 424 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 4F969A268D7A02960F0F767854BC3CB7 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 7A9F5FC0D1878A5F816B56DC7AF3FD18 522FFC5F054836969FFA04EEEE6EDA74 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 436 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 436 , common name: Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 12 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+----------
+google-nest-mini1
+----------
+Usonia us-east1 ICA -> 178 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 4F969A268D7A02960F0F767854BC3CB7 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 7A9F5FC0D1878A5F816B56DC7AF3FD18 522FFC5F054836969FFA04EEEE6EDA74 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 192 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 202 , common name: Widevine Cast Subroot Chromecast ICA 7 (Audio Assist 2 Chromecast ICA 16 (Audio Assist 4 Usonia Cast Subroot ICA
+Shenzhen SEI Robotics TV SEI400TV Amlogic AMLS905Y2 Cast ICA -> 2 , common name: 8904829353672401420
+Widevine Cast Subroot -> 2 , common name: Shenzhen SEI Robotics TV SEI400TV Amlogic AMLS905Y2 Cast ICA
+Usonia us-east4 ICA -> 14 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+Chromecast ICA 7 (Audio Assist 2 -> 4 , common name: L487YL FA8FCA78818B
+Chromecast ICA 16 (Audio Assist 4 -> 4 , common name: AP6BI3F FA8FCA8AB668
+----------
+google-nest-mini2
+----------
+Usonia us-east1 ICA -> 192 , common name: 4F969A268D7A02960F0F767854BC3CB7 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 7A9F5FC0D1878A5F816B56DC7AF3FD18 522FFC5F054836969FFA04EEEE6EDA74 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 213 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 224 , common name: Widevine Cast Subroot Chromecast ICA 16 (Audio Assist 4 Usonia Cast Subroot ICA
+Shenzhen SEI Robotics TV SEI400TV Amlogic AMLS905Y2 Cast ICA -> 6 , common name: 8904829353672401420
+Widevine Cast Subroot -> 6 , common name: Shenzhen SEI Robotics TV SEI400TV Amlogic AMLS905Y2 Cast ICA
+Chromecast ICA 16 (Audio Assist 4 -> 5 , common name: AP6BTBH FA8FCA71E68F
+Usonia us-east4 ICA -> 21 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+----------
+gosund-bulb1
+----------
+----------
+govee-led1
+----------
+----------
+homepod
+----------
+----------
+homepod-mini1
+----------
+----------
+homepod-mini2
+----------
+----------
+icsee-doorbell
+----------
+----------
+ikea-hub
+----------
+----------
+ikettle
+----------
+----------
+keyco-air
+----------
+----------
+lefun-cam-wired
+----------
+----------
+lgtv-wired
+----------
+----------
+magichome-strip
+----------
+----------
+meross-dooropener
+----------
+----------
+microseven-camera
+----------
+----------
+microwave
+----------
+----------
+nest-camera
+----------
+Usonia us-east1 ICA -> 446 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 4F969A268D7A02960F0F767854BC3CB7 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 522FFC5F054836969FFA04EEEE6EDA74 7A9F5FC0D1878A5F816B56DC7AF3FD18 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 451 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 451 , common name: Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 5 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+----------
+nest-doorbell
+----------
+Usonia us-east1 ICA -> 16 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 7EE870CE84671E55 4F969A268D7A02960F0F767854BC3CB7 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 7A9F5FC0D1878A5F816B56DC7AF3FD18 522FFC5F054836969FFA04EEEE6EDA74
+Usonia Cast Subroot ICA -> 18 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 18 , common name: Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 2 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+----------
+nest-hub-max
+----------
+Usonia us-east1 ICA -> 100 , common name: C3A0D3EAA1768D6C677255A7A46DB82D 4F969A268D7A02960F0F767854BC3CB7 7EE870CE84671E55 22DFFC38A78CE980F417B249120CCCAC FC7D3B7DECF9B2748207FBE911A46A02 7A9F5FC0D1878A5F816B56DC7AF3FD18 522FFC5F054836969FFA04EEEE6EDA74 3FE2828307928BDA
+Usonia Cast Subroot ICA -> 199 , common name: Usonia us-east4 ICA Usonia us-east1 ICA
+Cast Root CA -> 203 , common name: Chromecast ICA 14 (Video Assist 2 Chromecast ICA 21 (ATV Usonia Cast Subroot ICA
+Usonia us-east4 ICA -> 99 , common name: 3B30D4D02422442B3CD88CDEF03D7FF2
+Chromecast ICA 21 (ATV -> 2 , common name: DD2NPBA FA8FCA7CAE70
+Chromecast ICA 14 (Video Assist 2 -> 2 , common name: AB0R1VN FA8FCA9F9053
+----------
+nest-tstat
+----------
+----------
+nintendo-switch
+----------
+----------
+renpho-scale
+----------
+----------
+oxylink
+----------
+----------
+ring-camera
+----------
+----------
+ring-chime1
+----------
+----------
+ring-doorbell
+----------
+----------
+ring-doorbell-wired
+----------
+----------
+ring-indoor-cam
+----------
+----------
+roku-tv
+----------
+----------
+samsungtv-wired
+----------
+----------
+smartlife-bulb
+----------
+----------
+smartthings-hub
+----------
+----------
+sousvide
+----------
+----------
+switchbot-hub
+----------
+----------
+t-echodot
+----------
+192.168.11.108 -> 1969 , common name: 192.168.11.108
+0.0.0.0 -> 741 , common name: 0.0.0.0
+192.168.12.114 -> 302 , common name: 192.168.12.114
+192.168.10.129 -> 186 , common name: 192.168.10.129
+192.168.10.148 -> 183 , common name: 192.168.10.148
+192.168.10.238 -> 187 , common name: 192.168.10.238
+192.168.10.182 -> 184 , common name: 192.168.10.182
+192.168.10.176 -> 186 , common name: 192.168.10.176
+----------
+t-philips-hub
+----------
+----------
+t-wemo-plug
+----------
+----------
+thermopro-sensor
+----------
+----------
+tivostream
+----------
+Usonia us-east1 ICA -> 3 , common name: 7A9F5FC0D1878A5F816B56DC7AF3FD18 4F969A268D7A02960F0F767854BC3CB7
+Usonia Cast Subroot ICA -> 3 , common name: Usonia us-east1 ICA
+Cast Root CA -> 16 , common name: Widevine Cast Subroot Chromecast ICA 16 (Audio Assist 4 Usonia Cast Subroot ICA
+Shenzhen SEI Robotics TV SEI400TV Amlogic AMLS905Y2 Cast ICA -> 8 , common name: 8904829353672401420
+Widevine Cast Subroot -> 8 , common name: Shenzhen SEI Robotics TV SEI400TV Amlogic AMLS905Y2 Cast ICA
+Chromecast ICA 16 (Audio Assist 4 -> 5 , common name: AP6BTBH FA8FCA71E68F
+----------
+tplink-bulb
+----------
+----------
+tplink-plug
+----------
+----------
+tuya-camera
+----------
+----------
+ubell-doorbell
+----------
+----------
+wansview-cam-wired
+----------
+----------
+washer
+----------
+----------
+withings-bpm
+----------
+----------
+withings-sleep
+----------
+----------
+wyze-cam
+----------
+----------
+xiaomi-induction
+----------
+----------
+xiaomi-ricecooker
+----------
+----------
+yi-camera
+----------
