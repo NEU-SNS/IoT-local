@@ -48,32 +48,34 @@ def ipv6_filter(dict_dec, all_packets_results):
 
 
 def protocol_filter(dict_dec, all_packets_results, protocol):
-    # filter a group of protocols 
-    if protocol=='broadcast':
-        return BC_filter(dict_dec, all_packets_results)
-    elif protocol=='multicast':
-        return MC_filter(dict_dec, all_packets_results)
-    elif protocol=='ipv6':
-        return ipv6_filter(dict_dec, all_packets_results)
+    # ! TODO
+    return 0 
+    # # filter a group of protocols 
+    # if protocol=='broadcast':
+    #     return BC_filter(dict_dec, all_packets_results)
+    # elif protocol=='multicast':
+    #     return MC_filter(dict_dec, all_packets_results)
+    # elif protocol=='ipv6':
+    #     return ipv6_filter(dict_dec, all_packets_results)
     
-    # protocol filter 
-    protocol_lower = []
-    for i in protocol:
-        protocol_lower.append(i.lower())
-    for device in dict_dec:
-        if device not in all_packets_results:
-            print('no device %s in protocol analysis' % device)
-            # exit(1)
-            continue
-        cur_packets = all_packets_results[device]['packets']
-        new_packets = []
-        for packet in cur_packets:
-            if packet[6].lower() not in protocol_lower:
-                continue
-            new_packets.append(packet)
-        all_packets_results[device]['packets'] = new_packets
+    # # protocol filter 
+    # protocol_lower = []
+    # for i in protocol:
+    #     protocol_lower.append(i.lower())
+    # for device in dict_dec:
+    #     if device not in all_packets_results:
+    #         print('no device %s in protocol analysis' % device)
+    #         # exit(1)
+    #         continue
+    #     cur_packets = all_packets_results[device]['packets']
+    #     new_packets = []
+    #     for packet in cur_packets:
+    #         if packet[6].lower() not in protocol_lower:
+    #             continue
+    #         new_packets.append(packet)
+    #     all_packets_results[device]['packets'] = new_packets
 
-    return all_packets_results
+    # return all_packets_results
 
 
 
@@ -89,7 +91,7 @@ def idle_inputs(dict_dec:dict, model_dir:str, model_file_name:str, pcap_filter:s
     """
 
     
-    all_packets_results = {}
+    # all_packets_results = {}
     # * process each device: 
     for device in dict_dec:
 
@@ -100,17 +102,18 @@ def idle_inputs(dict_dec:dict, model_dir:str, model_file_name:str, pcap_filter:s
         print(packets_file)
         if os.path.isfile(packets_file):
             print('reading')
-            packets_results = pickle.load(open(packets_file, 'rb'))
-        else:
-            packets_results = {}
-        if 'packets' in packets_results: #  and 'flows' in packets_results:
-            all_packets_results[device] = packets_results
-            # pickle.dump(packets_results, open(packets_file, 'wb'))
+            # packets_results = pickle.load(open(packets_file, 'rb'))
             continue
         else:
-            # print(packets_results.keys())
-            packets_original = {}
-            packets_in_flows = {}
+            packets_results = {}
+        # if 'packets' in packets_results: #  and 'flows' in packets_results:
+        #     # all_packets_results[device] = packets_results
+        #     # pickle.dump(packets_results, open(packets_file, 'wb'))
+        #     continue
+        # else:
+        #     # print(packets_results.keys())
+        packets_original = {}
+        packets_in_flows = {}
         # exit(1)
         # print(len(packets_original), len(packets_in_flows))
         # * extract features from PCAP files 
@@ -158,11 +161,11 @@ def idle_inputs(dict_dec:dict, model_dir:str, model_file_name:str, pcap_filter:s
 
         # print('Len packets_in_flows:', len(packets_in_flows))
         packets_results = {'packets': packets_original, 'flows': packets_in_flows}
-        all_packets_results[device] = packets_results
+        # all_packets_results[device] = packets_results
         # print('dumping')
         pickle.dump(packets_results, open(packets_file, 'wb'))
 
-    return all_packets_results
+    return 0
 
 
 def extract_pcap_command_line(pcap_file:str, pcap_filter:str) -> list[list[str]]:
@@ -232,7 +235,7 @@ def extract_pcap_command_line(pcap_file:str, pcap_filter:str) -> list[list[str]]
         if to_dev_mac in inv_mac_dic: # known destination
             to_dev_name = inv_mac_dic[to_dev_mac]
         else:   # mutlicast/broadcast or unknown destination
-            if addressing_method(to_dev_mac)==0 and not to_dev_mac.startswith('02:'):
+            if addressing_method(to_dev_mac)==0 and not to_dev_mac.startswith('02:') and not to_dev_mac.startswith('00:'):
                 print('Unknown destination from %s:' % dev_name, to_dev_mac)
             to_dev_name = to_dev_mac
             # host = extract_host_new(ip_src, ip_dst, ip_host, count_dic, cur_time, whois_list)
@@ -316,13 +319,20 @@ def pyshark_idle_input(dict_dec:dict, out_dir:str, pcap_filter:str)->dict[str:li
             
         # * All packet statistics
         if pcap_filter == "":
+            # cur_packets = []
             all_packets_captures[device] = []
+            # capture_file = os.path.join(new_pcap_dir, device, 'all.capture')
+            # if os.path.isfile(capture_file):
+            #     continue
             for pcap_file in dict_dec[device]:
                 tmp_capture = extract_pcap_pyshark(pcap_file, pcap_filter, '')
                 # for tmp in tmp_capture:
                 #     results.append(tmp)
                 all_packets_captures[device].append(tmp_capture) 
                 tmp_capture.close()
+            
+            # pickle.dump(cur_packets, open(capture_file, 'wb'))
+            
             continue
 
         # * if filtered file exists
@@ -481,12 +491,6 @@ def main():
         device = dev_dir
         # if device != 'amazon-plug':  # and device != 'google-home-mini'
         #     continue
-        # if device != 'echodot': #  and device != 'google-home-mini':
-        #     continue
-        # if device != 't-philips-hub':
-        #     continue
-        # if device != 'google-home-mini':
-        #     continue
         # if not device.startswith('echodot3'):
         #     continue
         if device not in dict_dec:
@@ -515,46 +519,49 @@ def main():
     # # pcap_filter = "not tcp.analysis.duplicate_ack and not tcp.analysis.retransmission and not tcp.analysis.fast_retransmission"
     # pcap_filter = 'frame.time>="2022-08-25 12:00:00" and frame.time<="2022-08-29 11:59:59"'
     pcap_filter = ""
-    tmp_models_dir = 'packets'
+    tmp_models_name = 'packets'
     
     if addressing_method_filter!= "":
         # * unicast ethenet traffic only
         if addressing_method_filter == "eth_unicast":
             pcap_filter = "!ip and eth.dst.ig==0"
             out_dir = os.path.join(out_dir,'eth_unicast')
-            tmp_models_dir = 'unicast_nonip'
+            tmp_models_name = 'unicast_nonip'
         
         # * broadcast and multicast traffic 
         elif addressing_method_filter == "bcmc":
             pcap_filter = "eth.dst.ig==1"
             out_dir = os.path.join(out_dir,'bcmc')
-            tmp_models_dir = 'bcmc'
+            tmp_models_name = 'bcmc'
         
         # * unicast traffic 
         elif addressing_method_filter == 'unicast':
             pcap_filter = "eth.dst.ig==0"
             out_dir = os.path.join(out_dir,'unicast')
-            tmp_models_dir = 'unicast'
+            tmp_models_name = 'unicast'
     
     
     if basic_analysis_flag:
-        all_packets_results = idle_inputs(dict_dec, model_dir, tmp_models_dir, pcap_filter)
+        print('Start basic analysis.......')
+        # all_packets_results = 
+        idle_inputs(dict_dec, model_dir, tmp_models_name, pcap_filter)
         
         
         
-        # basic output: charts
-        basic_analysis_output(model_dir, out_dir,  dict_dec, all_packets_results)
+        # basic output: charts ｜ function in all_device_analysis.py
+        basic_analysis_output(model_dir, out_dir,  dict_dec, tmp_models_name)
         
-        if addressing_method_filter == "bcmc":
-            bc_packets_results = protocol_filter(dict_dec, all_packets_results, 'broadcast')
-            basic_analysis_output(model_dir, os.path.join(out_dir,'bc'),  dict_dec, bc_packets_results)
+        # TODO
+        # if addressing_method_filter == "bcmc":
+        #     bc_packets_results = protocol_filter(dict_dec, tmp_models_name, 'broadcast')
+        #     basic_analysis_output(model_dir, os.path.join(out_dir,'bc'),  dict_dec, bc_packets_results)
 
-            mc_packets_results = protocol_filter(dict_dec, all_packets_results, 'multicast')
-            basic_analysis_output(model_dir, os.path.join(out_dir,'mc'),  dict_dec, mc_packets_results)
+        #     mc_packets_results = protocol_filter(dict_dec, tmp_models_name, 'multicast')
+        #     basic_analysis_output(model_dir, os.path.join(out_dir,'mc'),  dict_dec, mc_packets_results)
     
     # # rare protocol analysis 
     # tshark_protocol_filter = ['ssl', 'tlsv1','AJP13', 'VITA', 'ESO', 'RRoCE', 'BAT_GW', 'BFD', 'AX4000', 'BAT_VIS', 'DHCPv6', 'CoAP']
-    # multiprocessing_wrapper(out_dir, dict_dec, all_packets_results, tshark_protocol_filter)
+    # multiprocessing_protocol_wise_analysis(out_dir, dict_dec, all_packets_results, tshark_protocol_filter)
 
 
     
@@ -566,7 +573,7 @@ def main():
         print('Current Filter: ', cur_filter)
         # exit(1)
         all_packets_captures = pyshark_idle_input_threading(dict_dec, out_dir, cur_filter)
-        multiprocessing_wrapper(out_dir, dict_dec, all_packets_captures, cur_filter)
+        multiprocessing_protocol_wise_analysis(out_dir, dict_dec, all_packets_captures, cur_filter)
     else:
         """
         Protocol statistics
@@ -581,7 +588,7 @@ def main():
         multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captures)
     
 
-def multiprocessing_wrapper(out_dir, dict_dec, all_packets_captures, cur_filter):
+def multiprocessing_protocol_wise_analysis(out_dir, dict_dec, all_packets_captures, cur_filter):
     """The mutliprocessing wrapper for per protocol analysis 
 
     Args:

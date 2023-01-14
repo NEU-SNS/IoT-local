@@ -11,6 +11,7 @@ import matplotlib
 from statsmodels import api as sm
 from scipy.fft import fft, ifft, fftfreq
 from sklearn.metrics.pairwise import cosine_similarity
+import sys
 
 matplotlib.use('Agg')
 matplotlib.rcParams['agg.path.chunksize'] = 10000
@@ -21,7 +22,8 @@ from matplotlib.ticker import PercentFormatter
 # root_feature = 'smart-speaker-idle-features/'
 # root_feature = 'unctrl-features/'
 # root_feature = 'idle-2020-features/'
-root_feature = '/home/hutr/local_output/idle-dataset/flow_burst/'
+# root_feature = '/home/hutr/local_output/idle-dataset-dec/flow_burst/'
+root_feature = sys.argv[1]
 
 device_names = []
 lparas = []
@@ -44,7 +46,8 @@ for v in lparas_sorted:
     print(v[1])    
 
 
-file_path = '/home/hutr/local_output/idle-dataset/periodic_detection/'
+# file_path = '/home/hutr/local_output/idle-dataset-dec/periodic_detection/'
+file_path = sys.argv[2]
 if not os.path.exists(file_path):
     os.system('mkdir -pv %s' % file_path)
 

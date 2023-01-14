@@ -44,7 +44,7 @@ def destination_distribution(packets:list[str]) -> int:
         output.add(packet[-1])
     return len(output)
 
-def basic_analysis_output(model_dir, out_dir, dict_dec, all_packets_results):
+def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
     # TODO: refactor this part to simplify
     # * distribution output file:
     # tmp_basename = os.path.basename(out_dir)
@@ -83,13 +83,17 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, all_packets_results):
     for device in dict_dec: 
         # if device in addressing_distribution_dict and device in destination_distribution_dict: #  and not device.startswith('google-'):
         #     continue
-        if device not in all_packets_results:
-            print('No traffic during the time:', device)
+        packets_file = os.path.join(model_dir, device, '%s.model' % tmp_models_name)
+        if not os.path.isfile(packets_file):
+            print('No %s traffic in this dataset:' % device)
             continue
+        packets_results = pickle.load(open(packets_file, 'rb'))
+        # if device not in all_packets_results:
+            
         print('Processing traffic ', device)
-        results = all_packets_results[device]['packets']
-        if 'flows' in all_packets_results[device]:
-            burst_dic = all_packets_results[device]['flows']
+        results = packets_results['packets']
+        if 'flows' in packets_results:
+            burst_dic = packets_results['flows']
         else:
             burst_dic = {}
             
@@ -307,9 +311,9 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, all_packets_results):
     broadcast_distribution_dict = {x:meaningful_addressing_distribution_dict[x][2] for x in meaningful_addressing_distribution_dict} 
     plotting.plotting_bar(broadcast_distribution_dict, os.path.join(out_dir, 'vis', 'broadcast_distribution_dict') , '# of broadcast packet per device')
 
-    print('Unicast: packets %d, size %d' % (unicast_count, unicast_size))
-    print('Multicast: packets %d, size %d' % (multicast_count, multicast_size))
-    print('Broadcast: packets %d, size %d' % (broadcast_count, broadcast_size))
+    print('Unicast: packets %d' % (unicast_count))
+    print('Multicast: packets %d' % (multicast_count))
+    print('Broadcast: packets %d' % (broadcast_count))
 
     # end
 

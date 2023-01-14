@@ -217,8 +217,8 @@ def main():
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
 
         device = dev_dir
-        if device[0] < 'g':
-            continue 
+        # if device[0] < 'g':
+        #     continue 
         # if device != 'amazon-plug': #  and device != 'google-home-mini':
         #     continue
         # if device != 'echodot3a': #  and device != 'google-home-mini':
@@ -245,7 +245,7 @@ def main():
     model_dir = os.path.join(out_dir, 'protocol_statistics')
     if not os.path.exists(model_dir):
         os.system('mkdir -pv %s' % model_dir)                
-
+    
     protocol_identify_tshark(model_dir, dict_dec)
     log_parser(model_dir, dict_dec)
     log_parser_pyshark(os.path.join(out_dir, 'protocol_statistics_pyshark'), dict_dec)
@@ -304,6 +304,8 @@ def log_parser(model_dir, dict_dec):
     with open(os.path.join(model_dir, '_overall.csv'),'w') as f:
         writer = csv.writer(f)
         writer.writerows(outputs)
+    
+    read_csv(os.path.join(out_dir, 'protocol_statistics','_overall.csv'), os.path.join(out_dir, 'protocol_statistics'))
     
 def log_parser_pyshark(model_dir, dict_dec):
     header = ['Device', 'All', 'IP', 'Non-IP', 'TCP', 'UDP', 'IPv6', 'Unicast', 'Multicast', 'Broadcast']
@@ -388,6 +390,8 @@ def log_parser_pyshark(model_dir, dict_dec):
         writer = csv.writer(f)
         writer.writerows(protocol_output)
     
+    read_csv(os.path.join(out_dir, 'protocol_statistics_pyshark','_overall_pyshark.csv'), os.path.join(out_dir, 'protocol_statistics_pyshark'))
+    
 
 def plot_protocol_statistics(model_dir, plotting_file):
     """plot the protocol distribution. 
@@ -419,6 +423,32 @@ def plot_protocol_statistics(model_dir, plotting_file):
     
     # plotting.plotting_bar(protocol_dict, os.path.join(plot_out_dir, 'IP and Non IP'), 'device_per_protocol')
     
+
+def read_csv(file_path, out_dir):
+    # with open(file_path) as f:
+    #     csvfile = csv.reader(f)
+    #     count = 0
+    #     for row in csvfile:
+    #         if count == 0:
+    #             # header:
+    df = pd.read_csv(file_path)
+    
+    non_zero = df.astype(bool).sum(axis=0) # number of non-zero value in each column
+
+    sum_column = df.sum(axis=0)
+
+    with open(os.path.join(out_dir, '_summary.txt'), 'w') as f:
+        for i, j in non_zero.items():
+            f.write('%s: %d\n' % (i, j))
+        
+        f.write('\n')
+        count = 0 
+        for i, j in sum_column.items():
+            if count == 0:
+                count += 1
+                continue
+            f.write('%s: %d\n' % (i, j))
+    
 if __name__ == "__main__":
     
     # c = {'echodot':["/home/hutr/2022-datasets/idle-dataset/echodot/2022-08-23_18.52.25_192.168.10.226.pcap", 
@@ -431,3 +461,4 @@ if __name__ == "__main__":
     # d = {'amazon-plug':["/home/hutr/2022-datasets/idle-dataset/amazon-plug/2022-08-24_10.37.00_192.168.10.208.pcap"]}
     # protocol_identify_tshark('/home/hutr/local_output/idle-dataset/protocol_statistics',c)
     main()
+    

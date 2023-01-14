@@ -30,7 +30,7 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
                 continue
             new_packets_captures[device] = all_packets_captures[device]
 
-        p = Process(target=protocol_identification_wrapper, args=(device_list, new_packets_captures, i ,return_dict, out_dir))
+        p = Process(target=protocol_identification_wrapper, args=(device_list, all_packets_captures, i ,return_dict, out_dir))
         procs.append(p)
         p.start()
 
@@ -139,11 +139,14 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
     inv_mac_dic = {v: k for k, v in mac_dic.items()}
     protocol_dict = {}
     addressing_method_list = {}
+    
+    # for each device 
     for device in dict_dec:
         tmp_protocols = {'2':{}, '3':{}, '4':{}, '5':{}}
         tmp_addressing_method_list = [0,0,0]
         # for f in dict_dec[device]:
 
+        # cur_packets_set = pickle.load(open(os.path.join(out_dir, 'pcap', device, 'all.capture'), 'rb'))
         cur_packets_set = all_packets_captures[device]
         tmp_count = 0
         periodic_detection_packets = []## packet.frame_info.time_delta
@@ -164,7 +167,7 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
 
                 # unicast multicast broadcast:
                 tmp_addressing_method_list[addressing_method(packet.eth.dst)] += 1
-                
+                if not is_router(packet[4], packet[5]):
                 # layer 2 eth: all packet count 
                 # print(tmp_protocols)
                 tmp_protocols['2'][cur_layers[0]] = tmp_protocols['2'].get(cur_layers[0], 0) + 1

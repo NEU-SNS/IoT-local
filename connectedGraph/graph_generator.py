@@ -4,7 +4,7 @@ import sys
 import typing
 from sklearn import preprocessing
 import numpy as np 
-import constants as c
+# import constants as c
 min_max_scaler = preprocessing.MinMaxScaler((0,10))
 
 def print_usage(is_error):
@@ -19,7 +19,7 @@ def example():
     return 0
 
 def output_data(out_file:str, dict_dec:dict[str, dict[str, int]]) -> bool: 
-    print('output:', out_file, dict_dec)
+    # print('output:', out_file, dict_dec)
     # 
     with open(out_file, 'w') as of:
         # write nodes: 
@@ -64,13 +64,14 @@ def main():
 
     dict_dec = {}
     volume_standardization = []
+    count = set()
     for dev_file in os.listdir(in_dir):
         if dev_file.startswith(".") or dev_file.startswith("log"):
             continue
         
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
         if not dev_file.endswith(".txt"):
-            print(c.WRONG_EXT % ("input file", "txt", full_dec_file), file=sys.stderr)
+            # print(c.WRONG_EXT % ("input file", "txt", full_dec_file), file=sys.stderr)
             continue
         
         device = dev_file.split('.')[0]
@@ -85,6 +86,7 @@ def main():
             for line in lines:
                 if len(line) <= 1:
                     continue
+                count.add(device)
                 dst_device = line.strip().split(' ')[0]
                 dst_volume = int(line.strip().split(' ')[1])
                 volume_standardization.append(dst_volume)
@@ -97,6 +99,8 @@ def main():
                         dict_dec[device][dst_device] = dst_volume
                     else:
                         dict_dec[device][dst_device] += dst_volume
+    print('Count non-empty files:', len(count))
+    print(count)
 
     volume_standardization = np.asarray(volume_standardization).reshape(-1, 1)
     min_max_scaler.fit(volume_standardization)

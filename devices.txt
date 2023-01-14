@@ -132,7 +132,7 @@ a4:11:62:3f:57:a3 arlo-doorbell
 9c:76:13:6e:22:24 ring-indoor-cam
 d8:eb:46:be:90:79 nest-doorbell
 1c:53:f9:3d:7:2b nest-camera
-8:2:8e:2e:ac:86 arlo-q-cam 
+8:2:8e:2e:ac:86 arlo-q-cam
 8:66:98:a2:21:9c appletv-wifi
 90:11:95:c4:ce:2 echo-uci
 e0:f7:28:16:a6:19 echoshow8

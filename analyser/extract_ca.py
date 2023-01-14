@@ -2,6 +2,7 @@ import pyshark
 import re
 from pathlib import Path
 import os
+import sys
 # import nest_asyncio
 # nest_asyncio.apply()
 
@@ -104,7 +105,9 @@ def analyzePacket(packet, ca_count, common_name_set):
 
 def main():
     # directory = '/home/hutr/2022-datasets/idle-dataset'
-    directory = '/home/hutr/2022-datasets/idle-dataset-nov'
+    directory = sys.argv[1]
+    out_file = sys.argv[2]
+    # = '/home/hutr/2022-datasets/idle-dataset-nov'
     # directory = '/home/hutr/2022-datasets/tagged-local'
 
     for device in os.listdir(directory):
@@ -162,7 +165,7 @@ def main():
 
         device_count[device] = [ca_count, common_name_set]
 
-        with open("tls_output_nov.txt", 'a') as f:
+        with open(out_file, 'a') as f:
             for device in device_count:
                 f.write('----------\n')
                 f.write(device)
