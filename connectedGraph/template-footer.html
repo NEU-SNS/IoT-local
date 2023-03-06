@@ -1,0 +1,51 @@
+        // adding nodes and edges to the graph
+        data = {nodes: nodes, edges: edges};
+
+        options = {
+            "configure": {
+                "enabled": true,
+                "filter": [
+                    "physics"
+                ]
+            },
+            "edges": {
+                "color": {
+                    "inherit": true
+                },
+                "smooth": {
+                    "enabled": false,
+                    "type": "continuous"
+                }
+            },
+            "interaction": {
+                "dragNodes": true,
+                "hideEdgesOnDrag": false,
+                "hideNodesOnDrag": false
+            },
+            "physics": {
+                "enabled": true,
+                "stabilization": {
+                    "enabled": true,
+                    "fit": true,
+                    "iterations": 1000,
+                    "onlyDynamicEdges": false,
+                    "updateInterval": 50
+                }
+            }
+        };
+        
+        // if this network requires displaying the configure window,
+        // put it in its div
+        options.configure["container"] = document.getElementById("config");
+
+        network = new vis.Network(container, data, options);
+
+        return network;
+
+    }
+
+    drawGraph();
+
+</script>
+</body>
+</html>

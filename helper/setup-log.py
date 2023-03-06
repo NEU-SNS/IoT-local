@@ -6,21 +6,21 @@ def filter_setup_log():
     with open('setup-device.log', 'r') as f:
         lines = f.readlines()
         for line in lines:
-            if line.startswith('2022-08-2'):
+            if line.startswith('2022-12-2'):
                 list_lines.append(line)
 
     with open('new-setup-device.log', 'w') as f:
         for line in list_lines:
-            if line.startswith('2022-08-20') or line.startswith('2022-08-21') or line.startswith('2022-08-22') or line.startswith('2022-08-23'):
+            if line.startswith('2022-12-20') or line.startswith('2022-12-21') or line.startswith('2022-12-22') or line.startswith('2022-12-29'):
                 continue
-            if line.startswith('2022-08-24') and int(line.split(' ')[1].split(':')[0]) < 12:
+            if line.startswith('2022-12-23') and int(line.split(' ')[1].split(':')[0]) < 21:
                 continue
-            if line.startswith('2022-08-29') and int(line.split(' ')[1].split(':')[0]) >= 12:
+            if line.startswith('2022-12-28') and int(line.split(' ')[1].split(':')[0]) >= 21:
                 continue
             f.write(line)
 
 def get_device_ip():
-    out_file='/home/hutr/local-traffic-analysis/devices_ip_new.txt'
+    out_file='/home/hutr/local-traffic-analysis/outputs/devices_ip_new.txt'
     device_ip_dict = {}
     ip_dict = {}
     with open('new-setup-device.log', 'r') as f:

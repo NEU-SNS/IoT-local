@@ -1,5 +1,5 @@
 
-# ! backup only
+# ! backup only, most functions here are deprecated
 
 def extract_pcap(pcap_file:str) -> list[list[str]]:
     """extract features from a pcap file
@@ -110,3 +110,62 @@ def extract_pcap(pcap_file:str) -> list[list[str]]:
 
 
     return result
+
+
+
+# TODO
+# ! Bug, need to recreat all_packets_results instead of edit it 
+def group_filter(dict_dec, all_packets_results, func, packet_index):
+    new_all_packets_results = {}
+    for device in all_packets_results:
+        cur_packets = all_packets_results[device]['packets']
+        new_packets = []
+        for packet in cur_packets:
+            # print(packet[packet_index], func.__name__)
+            if func(packet[packet_index]):
+                new_packets.append(packet)
+        new_all_packets_results[device] = {'packets': new_packets}
+        # new_all_packets_results[device]['packets'] = new_packets
+    return new_all_packets_results
+
+def BC_filter(dict_dec, all_packets_results):
+    return group_filter(dict_dec, all_packets_results, is_broadcast, 5)
+
+def MC_filter(dict_dec, all_packets_results):
+    return group_filter(dict_dec, all_packets_results, is_multicast, 5)
+
+def ipv6_filter(dict_dec, all_packets_results):
+    return group_filter(dict_dec, all_packets_results, is_ipv6, 9)
+
+
+def protocol_filter(dict_dec, all_packets_results, protocol):
+    # ! TODO
+    return 0 
+    # # filter a group of protocols 
+    # if protocol=='broadcast':
+    #     return BC_filter(dict_dec, all_packets_results)
+    # elif protocol=='multicast':
+    #     return MC_filter(dict_dec, all_packets_results)
+    # elif protocol=='ipv6':
+    #     return ipv6_filter(dict_dec, all_packets_results)
+    
+    # # protocol filter 
+    # protocol_lower = []
+    # for i in protocol:
+    #     protocol_lower.append(i.lower())
+    # for device in dict_dec:
+    #     if device not in all_packets_results:
+    #         print('no device %s in protocol analysis' % device)
+    #         # exit(1)
+    #         continue
+    #     cur_packets = all_packets_results[device]['packets']
+    #     new_packets = []
+    #     for packet in cur_packets:
+    #         if packet[6].lower() not in protocol_lower:
+    #             continue
+    #         new_packets.append(packet)
+    #     all_packets_results[device]['packets'] = new_packets
+
+    # return all_packets_results
+
+

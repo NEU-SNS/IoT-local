@@ -22,12 +22,18 @@ matplotlib.use('Agg')
 
 
 MAC_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/devices.txt'
-IP_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/ip_dict.txt'
+IP_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/helper/ip_dict.txt'
 DNS_ADDRESS = ['8.8.8.8', '8.8.4.4', '155.33.33.70', '155.33.33.75']
 LOCAL_IPS = ['129.10.227.248', '129.10.227.207']
 LOCAL_MACS = ['22:ef:03:1a:97:b9']
 
 
+def output_file_generator(out_dir:str, basename:str, device:str) -> str:
+    tmp_dir = os.path.join(out_dir, basename)
+    if not os.path.exists(tmp_dir):
+        os.system('mkdir -pv %s' % tmp_dir)
+    output_file = os.path.join(tmp_dir, device + '.txt') # Output file
+    return output_file
 
 def addressing_method(address:str) -> str:
     """Determine traffic addressing method: unicast, multicast, broadcast

@@ -189,10 +189,10 @@ def burst_split(flow_dic, threshold=1):
                 diff = [0] + [(ts[i + 1] - ts[i]) for i in range(len(ts)-1)]
                 diff = np.array(diff)
             except ValueError:
-                print('Time diff error: ', k, ts, diff, v[:,-1])
+                print('Time diff error: ', k, ts, diff, v[:,3])
                 with open('./decoded_idle_error.txt', "a+") as errff:
                     errff.write('Time diff error: ')
-                    errff.write('%s %s\n' %(v[0,-1], v[1,-1]))
+                    errff.write('%s\n' %(v[0,3]))
                 # exit(1)
                 continue
 
@@ -225,12 +225,15 @@ def flows_output(results, out_dir, device):
         # key = (protocol, dst, sport, dport), sport dport = 0 if layer 3 or below
         
         for ts, packets in v.items():
-            cur_flow = [ts, key[0], key[1], len(packets)]
+            tmp_volume = 0
+            for p in packets:
+                tmp_volume += int(p[-2])
+            cur_flow = [ts, key[0], key[1], key[2], key[3], len(packets), tmp_volume, packets[0][-1]]
             output.append(cur_flow)
             
     output = sorted(output, key=lambda x: x[0])
     with open(out_file, 'w') as f:
         write = csv.writer(f)
-        write.writerow(['timestamp', 'protocol', 'dst', 'flow_length'])
+        write.writerow(['timestamp', 'protocol', 'dst', 'device_port', 'remote_port', 'flow_length', 'volume', 'inbound'])
         write.writerows(output)
     

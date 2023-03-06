@@ -5,7 +5,7 @@ import json
 def parse_dhcp_logfiles(out_dir):
     print('parsing dhcp output')
     cur_out_dir = os.path.join(out_dir, 'protocols','dhcp/')
-    out_file = os.path.join(out_dir, 'protocols','dhcp.txt')
+    out_file = os.path.join(out_dir, 'protocols','dhcp_info.txt')
     if not os.path.isdir(cur_out_dir):
         print('Parse dhcp: Not a dir ', cur_out_dir)
     # print(os.path.isdir(cur_out_dir))
@@ -59,5 +59,5 @@ def parse_dhcp_logfiles(out_dir):
             f.write('\n\n')
     
 
-out_dir = '/home/hutr/local_output/idle-dataset'
+out_dir = '/home/hutr/local_output/idle-dataset-dec'
 parse_dhcp_logfiles(out_dir)

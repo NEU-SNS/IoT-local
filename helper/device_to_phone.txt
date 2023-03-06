@@ -1,0 +1,34 @@
+Device to Android phone: 
+echodot: pixel3b
+echodot3c: pixel3b
+echodot3d: pixel3b
+echodot4a: pixel3b
+echodot4c: pixel3b
+echoflex1: pixel3b
+echoflex2: pixel3b
+homepod-mini1: pixel3a pixel3b
+homepod-mini2: pixel3b
+nest-hub-max: pixel3a pixel3b
+t-echodot: pixel3a pixel3b
+nest-hub: pixel3a pixel3b
+Device to IOS phone: 
+appletv-wifi: iphone7-pink iphonexs
+echodot: iphone7-pink iphonexs
+echodot3a: iphone7-pink iphonexs
+echodot3b: iphone7-pink iphonexs
+echodot3c: iphone7-pink
+echodot3d: iphone7-pink iphonexs
+echodot4a: iphone7-pink iphonexs
+echodot4c: iphone7-pink iphonexs
+echoflex1: iphone7-pink iphonexs
+echoflex2: iphonexs
+echoshow5: iphone7-pink
+homepod: iphone7-pink iphonexs
+homepod-mini1: iphone7-pink iphonexs
+homepod-mini2: iphone7-pink iphonexs
+nest-hub-max: iphone7-pink iphonexs
+roku-tv: iphone7-pink iphonexs
+t-echodot: iphone7-pink
+nest-hub: iphone7-pink iphonexs
+meross-plug1: iphone7-pink iphonexs
+meross-plug2: iphone7-pink iphonexs

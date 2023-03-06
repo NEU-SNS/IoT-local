@@ -47,8 +47,8 @@ def plotting_bar(input_dict, output_dir, title):
     # dic = output_dir + '/'+ os.path.basename(output_dir) + '.pdf'
     dic = output_dir + '.pdf'
     plt.savefig(dic)
-    dic = output_dir + '.svg'
-    plt.savefig(dic)
+    # dic = output_dir + '.svg'
+    # plt.savefig(dic)
     return 0
 
 def plotting_mean_bar(input_dict, output_dir, title):

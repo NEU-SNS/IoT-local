@@ -1,14 +1,10 @@
-from analyser.flow_extraction import extract_single, burst_split
+# from analyser.flow_extraction import extract_single, burst_split
 from analyser.utils import * 
 from analyser.vis import * 
 from . import plotting
-
-def output_file_generator(out_dir:str, basename:str, device:str) -> str:
-    tmp_dir = os.path.join(out_dir, basename)
-    if not os.path.exists(tmp_dir):
-        os.system('mkdir -pv %s' % tmp_dir)
-    output_file = os.path.join(tmp_dir, device + '.txt') # Output file
-    return output_file
+"""
+Trying to deprecate this file 
+"""
 
 def addressing_distribution(packets:list[str]) -> list[int]:
     output = [0,0,0]
@@ -92,10 +88,10 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
             
         print('Processing traffic ', device)
         results = packets_results['packets']
-        if 'flows' in packets_results:
-            burst_dic = packets_results['flows']
-        else:
-            burst_dic = {}
+        # if 'flows' in packets_results:
+        #     burst_dic = packets_results['flows']
+        # else:
+        #     burst_dic = {}
             
         # * addressing method by packets
         addressing_distribution_dict[device] = addressing_distribution(results) # num of packets per addressing method
@@ -139,12 +135,13 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
             protocol_by_packet[packet[6]] += 1
             protocol_by_size[packet[6]] += int(packet[3])
 
+        """
         # * Distribution of protocol by number of packets
         plotting.plotting_bar(protocol_by_packet, os.path.join(out_dir, 'vis', 'device' , device ,'packets') , '# of packets per protocol')
 
         # * Distribution of protocol by total size in one day 
         plotting.plotting_bar(protocol_by_size, os.path.join(out_dir, 'vis', 'device', device ,'size') , 'total bytes on Aug 25 per protocol')
-
+        
 
         # * write output logs
         packet_count_dir = os.path.join(out_dir, 'packet_count')
@@ -162,7 +159,8 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
                     # print('  ', k2, v[k2])
                 ff.write(('\n'))
         
-
+        """
+        '''
         # * by flows
         flow_count = {} # key: device, value: dict {protocol, number of packets}
         protocol_by_flow = {} 
@@ -195,7 +193,7 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
         # ! seems to have bugs 
         plotting.plotting_mean_bar(protocol_by_flow_size, os.path.join(out_dir, 'vis', 'device' , device ,'flow_size') , 'Average flow size per protocol')
         
-
+        '''
         
         """
         For graph visualization, run graph_generator.py after this. 
@@ -216,7 +214,9 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
             for k,v in sorted(udp_output.items()):
                 ff.write(('%s %d\n') % (k, v))
 
+    return 0
 
+    # ! All of things below are reimplemented in protocol_identification.py
 
     # * save distribution results 
     # distribution_dicts = {'addressing_method': addressing_distribution_dict,
@@ -296,9 +296,9 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
     # num of unicast packets per device excluding traffic to/from the router. 
     unicast_distribution_dict = {x:meaningful_addressing_distribution_dict[x][0] for x in meaningful_addressing_distribution_dict}
     plotting.plotting_bar(unicast_distribution_dict, os.path.join(out_dir, 'vis', 'unicast_distribution_dict') , '# of unicast packet per device')
-    unicast_size = 0
-    multicast_size = 0
-    broadcast_size = 0
+    # unicast_size = 0
+    # multicast_size = 0
+    # broadcast_size = 0
     # for x in meaningful_addressing_distribution_dict:
     #     unicast_size += meaningful_addressing_distribution_dict[x][0]
     #     multicast_size += meaningful_addressing_distribution_dict[x][1]
@@ -318,6 +318,181 @@ def basic_analysis_output(model_dir, out_dir, dict_dec, tmp_models_name):
     # end
 
     return 0
+
+
+
+def idle_inputs(dict_dec:dict, model_dir:str, model_file_name:str, pcap_filter:str)->dict:
+    """_summary_
+
+    Args:
+        dict_dec (dict): _description_
+        model_dir (string): _description_
+    Returns:
+        dict: 
+    """
+
+    
+    # all_packets_results = {}
+    # * process each device: 
+    for device in dict_dec:
+
+        packet_dir = os.path.join(model_dir, device)
+        if not os.path.exists(packet_dir):
+            os.system('mkdir -pv %s' % packet_dir)
+        packets_file = packet_dir+'/%s.model' % model_file_name
+        print(packets_file)
+        if os.path.isfile(packets_file):
+            print('reading')
+            # packets_results = pickle.load(open(packets_file, 'rb'))
+            continue
+        else:
+            packets_results = {}
+        # if 'packets' in packets_results: #  and 'flows' in packets_results:
+        #     # all_packets_results[device] = packets_results
+        #     # pickle.dump(packets_results, open(packets_file, 'wb'))
+        #     continue
+        # else:
+        #     # print(packets_results.keys())
+        packets_original = {}
+        packets_in_flows = {}
+        # exit(1)
+        # print(len(packets_original), len(packets_in_flows))
+        # * extract features from PCAP files 
+        
+        results = []
+        # results = {}
+        print(device, dict_dec[device])
+        for pcap_file in dict_dec[device]:
+            tmp_res = extract_pcap_command_line(pcap_file, pcap_filter)
+            if isinstance(tmp_res, int):
+                continue
+            # print(tmp_res.shape)
+            # try:
+            for tmp in tmp_res:
+                results.append(tmp)
+                # if len(tmp_res.shape) != 1:
+                #     results = np.concatenate((results, tmp_res), axis=0) 
+                # else: 
+                #     results = np.concatenate((results, tmp_res.reshape(tmp_res.shape,1)), axis=0) 
+            # except:
+            #     print(device, 'failed!!!!! ', tmp_res.shape)
+            #     print(tmp_res)
+            #     continue
+
+        if len(results) == 0 or len(results) == 1:
+            print('Result==0')
+            continue
+        packets_original = results
+        # print('Len packets_original:', len(packets_original))
+
+        # TODO retransmisson
+        try:
+            flow_dic = extract_single(results)
+            # print('len(flow_dic):', len(flow_dic))
+            burst_threshold = 1
+            burst_dic = burst_split(flow_dic, burst_threshold)
+            if len(burst_dic) == 0:
+                print('burst_dic==0')
+                continue
+            packets_in_flows = burst_dic
+        except Exception as e:
+            print(device, 'failed!!!!! ')
+            print(str(e))
+            continue
+
+        # print('Len packets_in_flows:', len(packets_in_flows))
+        packets_results = {'packets': packets_original, 'flows': packets_in_flows}
+        # all_packets_results[device] = packets_results
+        # print('dumping')
+        pickle.dump(packets_results, open(packets_file, 'wb'))
+
+    return 0
+
+
+def extract_pcap_command_line(pcap_file:str, pcap_filter:str) -> list[list[str]]:
+    """extract features from a pcap file
+    
+    Args:
+        pcap_file (_type_): PCAP file 
+
+    Returns:
+        list[list[str]]: list of packets
+    """
+    global mac_dic, inv_mac_dic
+    dev_name = pcap_file.split('/')[-2]
+
+    feature_header = ['number', 'time_epoch', 'time_delta', 'len (size)', 'src mac', 'dst mac', 'Protocol', 'layer 4 protocol code (optional)', 
+                    'TCP/UDP stream (optional)', 'src ip (optional)', 'dst ip (optional)', 'src port (optional)', 'dst port (optional)']
+
+    command = ["tshark", "-r", pcap_file, 
+                "-Y", pcap_filter,
+                "-Tfields",
+                "-e", "frame.number",
+                "-e", "frame.time_epoch",
+                "-e", "frame.time_delta",
+                "-e", "frame.len",
+                "-e", "eth.src",
+                "-e", "eth.dst",
+                "-e", "_ws.col.Protocol",
+                "-e", "ip.proto",   # layer 4 protocol id
+                "-e", "ipv6.nxt",   # layer 4 protocol id
+                "-e", "tcp.stream",
+                "-e", "udp.stream",
+                "-e", "ip.src",
+                "-e", "ip.dst",
+                "-e", "tcp.srcport",
+                "-e", "udp.srcport",
+                "-e", "tcp.dstport",
+                "-e", "udp.dstport"
+                ] # "-e", "_ws.expert"  tcp.analysis.flags
+                # "-e", "ip.proto" # it returns transport layer protocol code. 
+    result = []
+    # Call Tshark on packets
+    process = Popen(command, stdout=PIPE, stderr=PIPE)
+    # Get output. Give warning message if any
+    out, err = process.communicate()
+    if err:
+        print("Error reading file: '{}'".format(err.decode('utf-8')))
+
+
+    # Parsing packets
+    my_device_mac =  mac_dic[dev_name]
+    
+    for packet in filter(None, out.decode('utf-8').split('\n')):
+        packet = np.array(packet.split())
+        if packet[4] == 'ADwin' and packet[5] == 'Config':
+            packet = np.delete(packet, 5)
+
+        cur_time = packet[1]
+
+        
+        if my_device_mac == packet[5]:  # dst = my device, inbound traffic
+            to_dev_mac = packet[4]
+
+        else:   # extract destination for all outbound traffic
+            to_dev_mac = packet[5]
+
+        if to_dev_mac in inv_mac_dic: # known destination
+            to_dev_name = inv_mac_dic[to_dev_mac]
+        else:   # mutlicast/broadcast or unknown destination
+            if addressing_method(to_dev_mac)==0 and not to_dev_mac.startswith('02:') and not to_dev_mac.startswith('00:'):
+                print('Unknown destination from %s:' % dev_name, to_dev_mac)
+            to_dev_name = to_dev_mac
+            # host = extract_host_new(ip_src, ip_dst, ip_host, count_dic, cur_time, whois_list)
+
+        to_dev_name = to_dev_name.lower()
+        packet = np.append(packet, to_dev_name) #append host as last column of output
+
+        result.append(np.asarray(packet))
+        # result = np.append(result, packet)
+    result = np.asarray(result, dtype=object)
+
+    if len(result) == 0:
+        print('len(result) == 0')
+        return 0
+
+    return result
+
 
 
 def testing_generator():
