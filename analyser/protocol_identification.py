@@ -55,7 +55,7 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
     protocol_dict = {}
     destination_distribution_dict = {} # {device: set(dst)}
     protocol_distribution_per_addressing_method = {} # {device: [{unicast protocol: count}, {multicast protocol: count}, {broadcast protocol: count}]}
-    eth_unicast_dict = {} # {device: {protocol:count}}
+    eth_unicast_dict = {} # eth_unicast: {device: {protocol:count}}
     for k, v in return_dict.items():
         # print(k,v)
         protocol_dict = protocol_dict | v[0]
@@ -73,6 +73,17 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
     pickle.dump(return_dict, open(return_dict_output, 'wb'))
     print('protocol_distribution_per_addressing_method: ', protocol_distribution_per_addressing_method)
     
+    
+    protocol_identification_outputing(out_dir, protocols_out_dir, return_dict)
+    
+    
+def protocol_identification_outputing(out_dir, protocols_out_dir, return_dict):
+    protocol_dict = return_dict['protocol_dict']
+    destination_distribution_dict = return_dict['destination_distribution_dict']
+    protocol_distribution_per_addressing_method = return_dict['protocol_distribution_per_addressing_method']
+    eth_unicast_dict = return_dict['eth_unicast_dict']
+
+
     f_unicast = open(os.path.join(protocols_out_dir, '_unicast.txt'), 'w')
     f_multicast = open(os.path.join(protocols_out_dir, '_multicast.txt'), 'w')
     f_broadcast = open(os.path.join(protocols_out_dir, '_broadcast.txt'), 'w')
@@ -81,7 +92,7 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
     unicast_tmp = {} # {protocol: {device: count}}
     multicast_tmp = {}
     broadcast_tmp = {}
-    
+    protocol_distribution_overall = {}  # {protocol: count}
     
     for device in protocol_distribution_per_addressing_method:
         addressing_method_list[device] = [0,0,0]
@@ -94,6 +105,10 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
             unicast_tmp[cur_protocol][device] += count
             f_unicast.write('  %s, %d\n' % (cur_protocol, count))
             addressing_method_list[device][0] += count
+            
+            if cur_protocol not in protocol_distribution_overall:
+                protocol_distribution_overall[cur_protocol] = 0
+            protocol_distribution_overall[cur_protocol] += count
         f_unicast.write('\n')
         
         f_multicast.write(('%s\n') % device)
@@ -105,6 +120,10 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
             multicast_tmp[cur_protocol][device] += count
             f_multicast.write('  %s, %d\n' % (cur_protocol, count))
             addressing_method_list[device][1] += count
+            
+            if cur_protocol not in protocol_distribution_overall:
+                protocol_distribution_overall[cur_protocol] = 0
+            protocol_distribution_overall[cur_protocol] += count
         f_multicast.write('\n')
         
         f_broadcast.write(('%s\n') % device)
@@ -116,20 +135,24 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
             broadcast_tmp[cur_protocol][device] += count
             f_broadcast.write('  %s, %d\n' % (cur_protocol, count))
             addressing_method_list[device][2] += count
+            
+            if cur_protocol not in protocol_distribution_overall:
+                protocol_distribution_overall[cur_protocol] = 0
+            protocol_distribution_overall[cur_protocol] += count
         f_broadcast.write('\n')
         
     f_unicast.close()
     f_multicast.close()
     f_broadcast.close()
     # # unicast:
-    unicast_tmp_distribution = {x: len(unicast_tmp[x]) for x in unicast_tmp}
-    plotting.plotting_bar(unicast_tmp_distribution, os.path.join(out_dir, 'vis', 'unicast_device_per_protocol') , '# of devices per protocol (unicast only)')
+    unicast_device_distribution = {x: len(unicast_tmp[x]) for x in unicast_tmp}
+    plotting.plotting_bar(unicast_device_distribution, os.path.join(out_dir, 'vis', 'unicast_device_per_protocol') , '# of devices per protocol (unicast only)')
     # # multicast
-    multicast_tmp_distribution = {x: len(multicast_tmp[x]) for x in multicast_tmp}
-    plotting.plotting_bar(multicast_tmp_distribution, os.path.join(out_dir, 'vis', 'multicast_device_per_protocol') , '# of devices per protocol (multicast only)')
+    multicast_device_distribution = {x: len(multicast_tmp[x]) for x in multicast_tmp}
+    plotting.plotting_bar(multicast_device_distribution, os.path.join(out_dir, 'vis', 'multicast_device_per_protocol') , '# of devices per protocol (multicast only)')
     # # broadcast
-    broadcast_tmp_distribution = {x: len(broadcast_tmp[x]) for x in broadcast_tmp}
-    plotting.plotting_bar(broadcast_tmp_distribution, os.path.join(out_dir, 'vis', 'broadcast_device_per_protocol') , '# of devices per protocol (broadcast only)')
+    broadcast_device_distribution = {x: len(broadcast_tmp[x]) for x in broadcast_tmp}
+    plotting.plotting_bar(broadcast_device_distribution, os.path.join(out_dir, 'vis', 'broadcast_device_per_protocol') , '# of devices per protocol (broadcast only)')
     
     # # eth unicast
     eth_unicast_device_per_protocol = {}
@@ -140,6 +163,14 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
             eth_unicast_device_per_protocol[prot][dev] = eth_unicast_dict[dev][prot]
     eth_unicast_device_per_protocol_distribution = {x: len(eth_unicast_device_per_protocol[x]) for x in eth_unicast_device_per_protocol}
     plotting.plotting_bar(eth_unicast_device_per_protocol_distribution, os.path.join(out_dir, 'vis', 'eth_unicast_device_per_protocol') , '# of devices per protocol (eth unicast only)')
+    
+    # * num of packets per protocol
+
+    plotting.plotting_bar(protocol_distribution_overall, os.path.join(out_dir, 'vis', 'packet_per_protocol') , '# of packets per protocol')
+    # num of unicast packets per protocol
+    # num of mutlicast packets per protocol
+    # num of broadcast packets per protocol
+    # num of eth_unicast packets per protocol
     
     # num of unicast packets per device
     unicast_distribution_dict = {x:addressing_method_list[x][0] for x in addressing_method_list}
@@ -169,7 +200,7 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
             for prot in eth_unicast_dict[dev]:
                 f.write(('  %s, %d\n') % ( prot, eth_unicast_dict[dev][prot]))
             f.write(('\n'))
-
+    
     # * count protocols
     count_all = {}
     count_ip = {}
@@ -252,7 +283,7 @@ def multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captu
             f.write('UDP: %d\n' % count_udp[dev])
             f.write('TLS: %d\n' % count_tls[dev])
             
-            for k in protocol_dict[dev]:
+            for k in protocol_dict[dev]:  # for each layer 
                 f.write('Layer %s: %s\n' % (k, json.dumps(protocol_dict[dev][k]))) 
                 for j in protocol_dict[dev][k]:
                     protocol_device_count[j].add(dev)
@@ -400,16 +431,18 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                     highest_protocol = cur_layers[2]
                     
                 # * layer 5
-                if len(cur_layers) > 3 and cur_layers[2] != 'icmp' and cur_layers[3].lower() != 'data' and cur_layers[3] != 'ajp13':
+                if len(cur_layers) > 3 and cur_layers[2] != 'icmp' and cur_layers[3].lower() not in ['data', 'ajp13', '_ws.malformed', 'ecatf']:
                     tmp_layer_name = cur_layers[3]
                     if tmp_layer_name == 'tcp.segments' and len(cur_layers) > 4:
-                        tmp_layer_name = cur_layers[4]
-                        
-                    if is_UDP and tmp_layer_name not in ['dns','mdns', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome'] and len(packet.udp.payload) > 350:
+                        tmp_layer_name = cur_layers[4] 
+                    elif is_UDP and tmp_layer_name not in ['dns','mdns', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome'] and len(packet.udp.payload) > 350:
                         # print(tmp_layer_name)
-                        if check_upnp(packet.udp.payload): 
+                        # TODO add port number 55444 and google ones. 
+                        if check_upnp(packet.udp.payload):  
                             # is UPnP/SSDP
                             tmp_layer_name = 'ssdp'
+                    elif is_UDP and sport=='55444' and sport=='55444':
+                        tmp_layer_name = 'Amazon_55444'
                     if tmp_layer_name.lower() != 'data':
                         tmp_protocols['5'][tmp_layer_name] = tmp_protocols['5'].get(tmp_layer_name, 0) + 1
                         highest_protocol = tmp_layer_name
@@ -442,8 +475,18 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                     dst_dev = inv_mac_dic[dst_mac]
                 else:
                     dst_dev = dst_mac
-                periodic_detection_packets.append([packet.sniff_timestamp, packet.frame_info.time_delta, highest_protocol, dst_dev, sport, dport, packet_length, inbound])
+                # fix the problem that seperate a flow since some packets in it were classified as tls while others are tcp. 
+                # if highest_protocol == 'tls':
+                #     periodic_protocol = 'tcp'
+                # else:
+                #     periodic_protocol = highest_protocol
                 
+                # ! TODO only transport layer conversation
+                if len(cur_layers) > 2:
+                    trans_proto = cur_layers[2]
+                else:
+                    trans_proto = highest_protocol
+                periodic_detection_packets.append([packet.sniff_timestamp, packet.frame_info.time_delta, highest_protocol, trans_proto, dst_dev, sport, dport, packet_length, inbound])
                 
                 # * packet count per protocol per destination device
                 if dst_dev not in packet_count:
@@ -455,12 +498,13 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
         # * Flow extraction for periodic detection  
         flows = flow_extraction_new.extract_single(periodic_detection_packets)
         bursts = flow_extraction_new.burst_split(flows)
+        bursts_only_udp = flow_extraction_new.burst_split_onlyudp(flows)
         
         header = ['time_epoch', 'time_delta', 'protocol', 'dst', 'sport', 'dport'] 
-        flow_extraction_new.flows_output(bursts, out_dir, device)
+        flow_extraction_new.flows_output(bursts, os.path.join(out_dir, 'flow_burst'), device)
+        flow_extraction_new.flows_output(bursts_only_udp, os.path.join(out_dir, 'flows'), device)
         
         # * plot device-level charts 
-        # TODO Distribution of protocol by number of packets
         # TODO Distribution of protocol by total size
         
         # * TCP UDP output for vis

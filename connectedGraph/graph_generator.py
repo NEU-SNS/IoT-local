@@ -166,7 +166,7 @@ def main():
     out_dir = sys.argv[2]
 
     undirected_graph(in_dir, out_dir)
-    directed_graph(in_dir, out_dir)
+    # directed_graph(in_dir, out_dir)
 
 def directed_graph(in_dir, out_dir):
     # ! Bug: not directed actually, need to generate different tcp_vis and udp_vis txt files. 
@@ -253,7 +253,7 @@ def build_graph_dict(device, dst_device, dst_volume, dict_dec):
 def undirected_graph(in_dir, out_dir):
     dict_dec = {} # {device: {device: volume}}
     volume_standardization = []
-    count = set()
+    count = {}
     
     # Zoomed-in graphs: 
     dict_echo = {}
@@ -278,15 +278,20 @@ def undirected_graph(in_dir, out_dir):
             dict_echo[device] = {}
             dict_google[device] = {}
             dict_apple[device] = {}
-
+        
         dev_file_full =  os.path.join(in_dir, dev_file)
         with open(dev_file_full, 'r') as ff:
             lines = ff.readlines()
             for line in lines:
                 if len(line) <= 1:
                     continue
-                count.add(device)
+                
+                
                 dst_device = line.strip().split(' ')[0]
+                if device not in count:
+                    count[device] = set()
+                count[device].add(dst_device)
+                
                 dst_volume = int(line.strip().split(' ')[1])
                 volume_standardization.append(dst_volume)
                 if line.strip() == '':
@@ -308,7 +313,13 @@ def undirected_graph(in_dir, out_dir):
                 #     else:
                 #         dict_dec[device][dst_device] += dst_volume
     print('Count non-empty files:', len(count))
-    print(count)
+    
+    ave = 0
+    for dev in count:
+        ave += len(count[dev])
+        print(dev, len(count[dev]))
+    ave = ave/ len(count)
+    print('Average:', ave)
 
     volume_standardization = np.asarray(volume_standardization).reshape(-1, 1)
     min_max_scaler.fit(volume_standardization)

@@ -48,6 +48,10 @@ python3 connectedGraph/graph_generator.py ~/local_output/idle-dataset-dec/udp_ou
 
 ### parse protocol logs
 python3 analyser/protocols/dhcp.py
+python3 analyser/protocols/PROTOCOL.py
+
+### port number information, from flow_burst directory
+python3 analyser/protocols/protocol_ports.py
 
 ### extract CA from TLS handshakes
 python3 analyser/extract_ca.py /home/hutr/2022-datasets/idle-dataset-dec /home/hutr/local-traffic-analysis/outputs/tls_dec.txt

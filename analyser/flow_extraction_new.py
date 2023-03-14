@@ -5,7 +5,7 @@ import numpy as np
 import csv
 
 
-feature_header = ['time_epoch', 'time_delta', 'protocol', 'dst', 'sport', 'dport']
+feature_header = ['time_epoch', 'time_delta', 'protocol', 'trans_port', 'dst', 'sport', 'dport', 'packet_length', 'inbound (bool)']
 
 def extract_single(packets):
         """Extract flows by 5-tuple
@@ -55,10 +55,10 @@ def extract_single(packets):
         # Return result
         return result
 
-def layer_4_below(packet):
+def layer_4_below(s_port, d_port):
     # if len(packet)<8:
     #     return True
-    if packet[4] == '0' and packet[5] == '0':
+    if s_port == '0' and d_port == '0':
         # print(packet, packet[7])
         return True
     return False
@@ -135,90 +135,149 @@ def rm_retrans_dup(results):
 
 
 def key_generate(packet):
-        """ Extract the key of a packet and check whether it is incoming or
-            outgoing.
-            Parameters
-            ----------
-            # timestamp : float
-            #     Timestamp of burst.
-            packet : np.array of shape=(n_features)
-        
-            Returns
-            -------
-            key : tuple
-                Key 5-tuple of flow.
-            # incoming : boolean
-            #     Boolean indicating whether flow is incoming.
-            """
-        # Define key as 5-tuple (trans_proto, dst, sport , dport)
-        try:
-            key = (packet[2], packet[3], packet[4], packet[5]) #  
-        except:
-            return (0,0,0,0) # 
+    """ Extract the key of a packet and check whether it is incoming or
+        outgoing.
+        Parameters
+        ----------
+        # timestamp : float
+        #     Timestamp of burst.
+        packet : np.array of shape=(n_features)
+    
+        Returns
+        -------
+        key : tuple
+            Key 5-tuple of flow.
+        # incoming : boolean
+        #     Boolean indicating whether flow is incoming.
+        """
+    # Define key as 5-tuple (trans_proto, dst, sport , dport)
+    try:
+        key = (packet[3], packet[4], packet[5], packet[6]) #  
+    except:
+        return (0,0,0,0) # 
 
-        # Return result
-        return key
+    # Return result
+    return key
 
-def burst_split(flow_dic, threshold=1):
-        """Split packets in bursts based on given threshold.
-            A burst is defined as a period of inactivity specified by treshold.
-            Parameters
-            ----------
-            flow_dic : dict, key: tuple, value: packets
-            threshold : float, default=1
-                Burst threshold in seconds.
-            Returns
-            -------
-            result : dict{ key: tuple, value: dict{key: ts, value: packets} }
-                List of np.array, where each list entry are the packets in a
-                burst.
-            """
-        # Initialise result
-        result = {}
-        for k, v in flow_dic.items():
-            
-            # Compute difference between packets
-            if len(v) < 2:
-                continue
-            ts = v[:, 0]
-            diff = v[:, 1]
-            ts = ts.astype(np.float)
-            try:
-                # diff = diff.astype(np.float)
-                
-                diff = [0] + [(ts[i + 1] - ts[i]) for i in range(len(ts)-1)]
-                diff = np.array(diff)
-            except ValueError:
-                print('Time diff error: ', k, ts, diff, v[:,3])
-                with open('./decoded_idle_error.txt', "a+") as errff:
-                    errff.write('Time diff error: ')
-                    errff.write('%s\n' %(v[0,3]))
-                # exit(1)
-                continue
 
-            
+def burst_split_onlyudp(flow_dic, threshold=1):
+    """only split udp traffic
+        ----------
+        flow_dic : dict, key: tuple, value: packets
+        threshold : float, default=1
+            Burst threshold in seconds.
+        Returns
+        -------
+        result : dict{ key: tuple, value: dict{key: ts, value: packets} }
+            List of np.array, where each list entry are the packets in a
+            burst.
+        """
+    # Initialise result
+    result = {}
+    for k, v in flow_dic.items(): # k: (trans_proto, dst, sport , dport)
+        if layer_4_below(k[1],k[2]):
+            continue
+        elif k[0] == 'tcp':
             result[k] = result.get(k,{})
+            result[k][v[0,0]] = v
+            continue
+        # Compute difference between packets
+        if len(v) < 2:
+            continue
+        ts = v[:, 0]
+        diff = v[:, 1]
+        ts = ts.astype(np.float)
+        try:
+            # diff = diff.astype(np.float)
+            
+            diff = [0] + [(ts[i + 1] - ts[i]) for i in range(len(ts)-1)]
+            diff = np.array(diff)
+        except ValueError:
+            print('Time diff error: ', k, ts, diff, v[:,4])
+            with open('./decoded_idle_error.txt', "a+") as errff:
+                errff.write('Time diff error: ')
+                errff.write('%s\n' %( ','.join(v[0,4])))
+            # exit(1)
+            continue
 
-            # Select indices where difference is greater than threshold
-            indices_split = np.argwhere(diff > threshold)
-            # Add 0 as start and length as end index
-            indices_split = [0] + list(indices_split.flatten()) + [v.shape[0]]
-            for start, end in zip(indices_split, indices_split[1:]):
-                if end == 0:
-                    # print("end == 0",indices_split)
-                    continue
-                result[k][ts[start]] = result[k].get(ts[start],[])
-                result[k][ts[start]] = v[start:end]
-                result[k][ts[start]][0,1] = float(0.0)
+        
+        result[k] = result.get(k,{})
 
-        # Return result
-        return result
+        # Select indices where difference is greater than threshold
+        indices_split = np.argwhere(diff > threshold)
+        # Add 0 as start and length as end index
+        indices_split = [0] + list(indices_split.flatten()) + [v.shape[0]]
+        for start, end in zip(indices_split, indices_split[1:]):
+            if end == 0:
+                # print("end == 0",indices_split)
+                continue
+            result[k][ts[start]] = result[k].get(ts[start],[])
+            result[k][ts[start]] = v[start:end]
+            result[k][ts[start]][0,1] = float(0.0)
+
+    # Return result
+    return result
+    
+def burst_split(flow_dic, threshold=1):
+    """Split packets in bursts based on given threshold.
+        A burst is defined as a period of inactivity specified by treshold.
+        Parameters
+        ----------
+        flow_dic : dict, key: tuple, value: packets
+        threshold : float, default=1
+            Burst threshold in seconds.
+        Returns
+        -------
+        result : dict{ key: tuple, value: dict{key: ts, value: packets} }
+            List of np.array, where each list entry are the packets in a
+            burst.
+        """
+    # Initialise result
+    result = {}
+    for k, v in flow_dic.items():
+        
+        # Compute difference between packets
+        if len(v) < 2:
+            continue
+        ts = v[:, 0]
+        diff = v[:, 1]
+        ts = ts.astype(np.float)
+        try:
+            # diff = diff.astype(np.float)
+            
+            diff = [0] + [(ts[i + 1] - ts[i]) for i in range(len(ts)-1)]
+            diff = np.array(diff)
+        except ValueError:
+            print('Time diff error: ', k, ts, diff, v[:,4])
+            with open('./decoded_idle_error.txt', "a+") as errff:
+                errff.write('Time diff error: ')
+                errff.write('%s\n' %( ','.join(v[0,4])))
+            # exit(1)
+            continue
+
+        
+        result[k] = result.get(k,{})
+
+        # Select indices where difference is greater than threshold
+        indices_split = np.argwhere(diff > threshold)
+        # Add 0 as start and length as end index
+        indices_split = [0] + list(indices_split.flatten()) + [v.shape[0]]
+        for start, end in zip(indices_split, indices_split[1:]):
+            if end == 0:
+                # print("end == 0",indices_split)
+                continue
+            result[k][ts[start]] = result[k].get(ts[start],[])
+            result[k][ts[start]] = v[start:end]
+            result[k][ts[start]][0,1] = float(0.0)
+
+    # Return result
+    return result
 
 def flows_output(results, out_dir, device):
-    if not os.path.exists(os.path.join(out_dir, 'flow_burst')):
-        os.system('mkdir -pv %s' % os.path.join(out_dir, 'flow_burst'))
+    if not os.path.exists(out_dir):
+        os.system('mkdir -pv %s' % out_dir)
         
-    out_file = os.path.join(out_dir, 'flow_burst', '%s.csv' % device)
+    out_file = os.path.join(out_dir, '%s.csv' % device)
     
     output = []
     for key, v in results.items():
@@ -226,14 +285,17 @@ def flows_output(results, out_dir, device):
         
         for ts, packets in v.items():
             tmp_volume = 0
+            highest_protocol = set()
             for p in packets:
                 tmp_volume += int(p[-2])
-            cur_flow = [ts, key[0], key[1], key[2], key[3], len(packets), tmp_volume, packets[0][-1]]
+                highest_protocol.add(p[2])
+            highest_protocol = sorted(list(highest_protocol))
+            cur_flow = [ts, key[0], key[1], key[2], key[3], ';'.join(highest_protocol), len(packets), tmp_volume, packets[0][-1]]
             output.append(cur_flow)
             
     output = sorted(output, key=lambda x: x[0])
     with open(out_file, 'w') as f:
         write = csv.writer(f)
-        write.writerow(['timestamp', 'protocol', 'dst', 'device_port', 'remote_port', 'flow_length', 'volume', 'inbound'])
+        write.writerow(['timestamp', 'trans_protocol', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
         write.writerows(output)
     

@@ -299,6 +299,9 @@ def icmpv6_analysis():
     return 0
 
 def http_analysis():
+    
+    # TODO HTTP suspicious user-agent
+    # TODO numerical IP 
     return 0
 
 def udp_analysis():

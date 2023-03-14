@@ -351,8 +351,13 @@ def main():
         if pcap_filter != "":
             cur_filter = pcap_filter
         all_packets_captures = pyshark_idle_input_threading(dict_dec, out_dir, cur_filter)
-        # multiprocessing_protocol_identification from analser.protocol_identification module
+        # * multiprocessing_protocol_identification from analser.protocol_identification module
         multiprocessing_protocol_identification(out_dir, dict_dec, all_packets_captures)
+        
+        # # * uncomment to skip pcap reading and processing part, outputing only: 
+        # return_dict_output = os.path.join(out_dir, 'protocol_statistics_pyshark') + '/_return_dict.model' 
+        # return_dict = pickle.load(open(return_dict_output, 'rb'))
+        # protocol_identification_outputing(out_dir, os.path.join(out_dir, 'protocol_statistics_pyshark'), return_dict)
     
 
 def multiprocessing_protocol_wise_analysis(out_dir, dict_dec, all_packets_captures, cur_filter):

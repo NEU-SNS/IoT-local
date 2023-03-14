@@ -15,10 +15,10 @@ def parse_flow_burst(out_dir):
     if not os.path.isdir(cur_out_dir):
         print('Parse flow burst: Not a dir ', cur_out_dir)
 
-    protocol_port_dict = {}     # {device: {protocol: [device_port, dst_port]}}
+    protocol_port_dict = {}     # {device: {protocol: [device_port, remote_port]}}
     server_port_dict = {} # {device: {protocol: [device_port (only inbound)]}}
-    # device_protocol_port_dict = {}     # {device: {dst_device: {protocol: {(device_port, dst_port): {direction: [packet_num, volume]} }}}
-    # device_protocol_port_dict2 = {}     # {(device, device_port, dst_device, dst_port, protocol, direction): [packet_num, volume]}
+    # device_protocol_port_dict = {}     # {device: {dst_device: {protocol: {(device_port, remote_port): {direction: [packet_num, volume]} }}}
+    # device_protocol_port_dict2 = {}     # {(device, device_port, dst_device, remote_port, protocol, direction): [packet_num, volume]}
     for dev_file in os.listdir(cur_out_dir):
         if not dev_file.endswith('.csv'):
             continue
@@ -35,30 +35,37 @@ def parse_flow_burst(out_dir):
                     count += 1
                     continue
                 
-                protocol = line[1]
+                trans_protocol = line[1]
                 dst_device = line[2]
                 device_port = line[3]
-                dst_port = line[4]
-                flow_length = line[5]
-                volume = line[6]
+                remote_port = line[4]
+                highest_protocol = line[5]
+                flow_length = line[6]
+                volume = line[7]
                 inbound = line[-1]
-                if protocol not in protocol_port_dict[dev_name]:
-                    protocol_port_dict[dev_name][protocol] = set()
-                protocol_port_dict[dev_name][protocol].add((device_port, dst_port))
+                if ';' in highest_protocol:
+                    if 'tls' in highest_protocol:
+                        highest_protocol = 'tls'
+                    else:
+                        highest_protocol = trans_protocol
                 
-                if inbound:
-                    if protocol not in server_port_dict[dev_name]:
-                        server_port_dict[dev_name][protocol] = set()
-                    server_port_dict[dev_name][protocol].add(device_port)
+                if highest_protocol not in protocol_port_dict[dev_name]:
+                    protocol_port_dict[dev_name][highest_protocol] = set()
+                protocol_port_dict[dev_name][highest_protocol].add((device_port, remote_port))
+                
+                if int(inbound)==1:
+                    if highest_protocol not in server_port_dict[dev_name]:
+                        server_port_dict[dev_name][highest_protocol] = set()
+                    server_port_dict[dev_name][highest_protocol].add(device_port)
         
         # print(protocol_port_dict)
         # testing pandas df
         df = pd.read_csv(os.path.join(cur_out_dir,dev_file))
         # print(df.columns)
         df = df.drop(columns=['timestamp'])
-        df.rename({'my_port': 'device_port', 'others_port': 'dst_port', 'flow_length': 'packet_count'}, axis=1, inplace=True)
-        new_df = df.groupby(['protocol','dst','device_port','dst_port','inbound']).sum()
-        # new_df.rename({'my_port': 'device_port', 'others_port': 'dst_port', 'flow_length': 'packet_count'}, axis=1, inplace=True)
+        df.rename({'flow_length': 'packet_count'}, axis=1, inplace=True)
+        new_df = df.groupby(['highest_protocol','dst','device_port','remote_port','inbound']).sum()
+        # new_df.rename({'my_port': 'device_port', 'others_port': 'remote_port', 'flow_length': 'packet_count'}, axis=1, inplace=True)
         
         csv_out_file = os.path.join(csv_out_dir,'%s.csv' % dev_name)
         # print(new_df.head())
