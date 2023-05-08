@@ -21,7 +21,7 @@ import analyser.constants as c
 matplotlib.use('Agg')
 
 
-MAC_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/devices.txt'
+MAC_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/devices.txt'  # mac address file with ALL mac address to device name mappings. Not only devices, but phones
 IP_ADDRESS_FILE = '/home/hutr/local-traffic-analysis/helper/ip_dict.txt'
 DNS_ADDRESS = ['8.8.8.8', '8.8.4.4', '155.33.33.70', '155.33.33.75']
 LOCAL_IPS = ['129.10.227.248', '129.10.227.207']

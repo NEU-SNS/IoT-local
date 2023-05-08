@@ -1,7 +1,7 @@
 from analyser.utils import *
 from analyser.flow_extraction import extract_single, burst_split
 import analyser.plotting as plotting
-from analyser.extract_ca import analyzePacket
+# from analyser.extract_ca import analyzePacket
 from analyser.protocols_analysis import * 
 from analyser.all_device_analysis import * 
 from analyser.vis import *
@@ -30,7 +30,7 @@ def pyshark_idle_input_threading(dict_dec:dict, out_dir:str, pcap_filter:str):
         in_dev[index % num_thread].append(device)
         index += 1
 
-    print('Mutlithreading... ', len(in_dev))
+    print('Multithreading... ', len(in_dev))
     threads = [None] * num_thread
     tmp_results = [None] * num_thread
     
@@ -250,7 +250,7 @@ def main():
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
 
         device = dev_dir
-        # if device != 'amazon-plug':  # and device != 'google-home-mini'
+        # if device != 'roku-tv' and device != 'ikea-hub' :  # and device != 'google-home-mini'
         #     continue
         # if not device.startswith('echodot3'):
         #     continue
@@ -320,19 +320,12 @@ def main():
         
         # basic output: charts ｜ function in all_device_analysis.py
         basic_analysis_output(model_dir, out_dir,  dict_dec, tmp_models_name)
-        
-        # TODO
-        # if addressing_method_filter == "bcmc":
-        #     bc_packets_results = protocol_filter(dict_dec, tmp_models_name, 'broadcast')
-        #     basic_analysis_output(model_dir, os.path.join(out_dir,'bc'),  dict_dec, bc_packets_results)
-
-        #     mc_packets_results = protocol_filter(dict_dec, tmp_models_name, 'multicast')
-        #     basic_analysis_output(model_dir, os.path.join(out_dir,'mc'),  dict_dec, mc_packets_results)
+    
     
 
 
-    if cur_filter != "" and addressing_method_filter != "":
-        """
+    if cur_filter != "": #  or addressing_method_filter != ""
+        """ 
         protocol specific analysis
         """
         print('Current Filter: ', cur_filter)

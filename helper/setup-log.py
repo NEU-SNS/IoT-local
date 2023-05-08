@@ -6,24 +6,24 @@ def filter_setup_log():
     with open('setup-device.log', 'r') as f:
         lines = f.readlines()
         for line in lines:
-            if line.startswith('2022-12-2'):
+            if line.startswith('2023-04-1'):
                 list_lines.append(line)
 
-    with open('new-setup-device.log', 'w') as f:
+    with open('new-setup-device2.log', 'w') as f:
         for line in list_lines:
-            if line.startswith('2022-12-20') or line.startswith('2022-12-21') or line.startswith('2022-12-22') or line.startswith('2022-12-29'):
+            if line.startswith('2023-04-10') or line.startswith('2023-04-11') or line.startswith('2023-04-12') or line.startswith('2023-04-13') or line.startswith('2023-04-14')  or line.startswith('2023-04-15'):
                 continue
-            if line.startswith('2022-12-23') and int(line.split(' ')[1].split(':')[0]) < 21:
-                continue
-            if line.startswith('2022-12-28') and int(line.split(' ')[1].split(':')[0]) >= 21:
-                continue
+            # if line.startswith('2022-12-23') and int(line.split(' ')[1].split(':')[0]) < 21:
+            #     continue
+            # if line.startswith('2022-12-28') and int(line.split(' ')[1].split(':')[0]) >= 21:
+            #     continue
             f.write(line)
 
 def get_device_ip():
-    out_file='/home/hutr/local-traffic-analysis/outputs/devices_ip_new.txt'
+    out_file='/home/hutr/local-traffic-analysis/outputs/devices_ip_2023Apr.txt'
     device_ip_dict = {}
     ip_dict = {}
-    with open('new-setup-device.log', 'r') as f:
+    with open('new-setup-device2.log', 'r') as f:
         lines = f.readlines()
         for line in lines:
             tmp = line.split(' ')
@@ -55,7 +55,7 @@ def get_device_ip():
     print('IP set: ', len(ip_dict))
     for k,v in ip_dict.items():
         print(k,v)
-    with open('ip_dict.txt', 'w') as f:
+    with open('ip_dict_2023Apr.txt', 'w') as f:
         f.write(json.dumps(ip_dict, indent=4))
     with open(out_file, 'w') as f:
         f.write(json.dumps(device_ip_dict, indent=4))
@@ -71,5 +71,5 @@ def get_device_ip():
     #     print(i[0], i[1])
 
     
-# filter_setup_log()
+filter_setup_log()
 get_device_ip()

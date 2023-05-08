@@ -304,6 +304,8 @@ def protocol_identification_outputing(out_dir, protocols_out_dir, return_dict):
             #     continue
             f.write('%s: %d | %s\n\n' % (i[0], i[1], ', '.join(list(protocol_device_count[i[0]]))))
             
+    protocol_device_count = {x: len(protocol_device_count[x]) for x in protocol_device_count}
+    plotting.plotting_bar(protocol_device_count, os.path.join(out_dir, 'vis', 'device_per_protocol') , '# of device per protocol')
 
 def protocol_identification_wrapper(dict_dec, all_packets_captures, procnum, return_dict, out_dir):
     return_dict[procnum] = protocol_identification(dict_dec, all_packets_captures, out_dir)
@@ -352,6 +354,8 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
         
         tcp_output = {}
         udp_output = {}
+        tcp_output_directional = {}
+        udp_output_directional = {}
         
         t1 = time.time()
         if not isinstance(cur_packets_set, list): # if only loaded one pcap file
@@ -379,6 +383,8 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                 for i in packet.layers:
                     cur_layers.append(i.layer_name)
                 
+                #! packet.highest_layer
+                #! packet.transport_layer
                 
                 # * unicast multicast broadcast:
                 tmp_addressing_flag = addressing_method(dst_mac)
@@ -392,17 +398,17 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                 # * different destination (other IoT devices) count, destination_distribution
                 unicast_not_router = (tmp_addressing_flag == 0 and not is_router(src_mac, dst_mac))
                 if unicast_not_router:    # unicast and not router
-                    if dst_mac == my_device_mac and src_mac in inv_mac_dic:
+                    if dst_mac == my_device_mac and src_mac in inv_mac_dic: # inbound traffic 
                         dst_dev = inv_mac_dic[src_mac]
                         destination_set.add(dst_dev)
-                    elif src_mac == my_device_mac and dst_mac in inv_mac_dic:
+                    elif src_mac == my_device_mac and dst_mac in inv_mac_dic: # outbound traffic
                         dst_dev = inv_mac_dic[dst_mac]
                         destination_set.add(dst_dev)
                 
                 # * layer 2 eth: all packet count 
                 # print(tmp_protocols)
                 tmp_protocols['2'][cur_layers[0]] = tmp_protocols['2'].get(cur_layers[0], 0) + 1
-                
+
                 # * layer 3: IP or Non IP, v4 and v6
                 tmp_protocols['3'][cur_layers[1]] = tmp_protocols['3'].get(cur_layers[1], 0) + 1
                 highest_protocol = cur_layers[1]
@@ -428,21 +434,36 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                             if dst_dev not in tcp_output:
                                 tcp_output[dst_dev] = 0
                             tcp_output[dst_dev] += int(packet_length)
+                    # elif cur_layers[2] == 'icmp':
+                        
                     highest_protocol = cur_layers[2]
                     
                 # * layer 5
                 if len(cur_layers) > 3 and cur_layers[2] != 'icmp' and cur_layers[3].lower() not in ['data', 'ajp13', '_ws.malformed', 'ecatf']:
                     tmp_layer_name = cur_layers[3]
+                    
+                    special_port_list = ['44818' , # enip
+                         '44322', # pmproxy
+                         '48898', # ams
+                         '48049', # cbsp
+                        #  '56700', # quic udp
+                         '19132', # raknet
+                         '57000' # irc
+                    ]
+                    
                     if tmp_layer_name == 'tcp.segments' and len(cur_layers) > 4:
                         tmp_layer_name = cur_layers[4] 
                     elif is_UDP and tmp_layer_name not in ['dns','mdns', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome'] and len(packet.udp.payload) > 350:
-                        # print(tmp_layer_name)
-                        # TODO add port number 55444 and google ones. 
+                        
                         if check_upnp(packet.udp.payload):  
                             # is UPnP/SSDP
                             tmp_layer_name = 'ssdp'
-                    elif is_UDP and sport=='55444' and sport=='55444':
+                    elif is_UDP and sport=='55444' and dport=='55444':
+                        # TODO add google ones. 
                         tmp_layer_name = 'Amazon_55444'
+                    elif not is_UDP and (sport in special_port_list or dport in special_port_list) and tmp_layer_name not in ['tcp','tls']:
+                        tmp_layer_name = cur_layers[2]
+                    
                     if tmp_layer_name.lower() != 'data':
                         tmp_protocols['5'][tmp_layer_name] = tmp_protocols['5'].get(tmp_layer_name, 0) + 1
                         highest_protocol = tmp_layer_name
@@ -501,8 +522,10 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
         bursts_only_udp = flow_extraction_new.burst_split_onlyudp(flows)
         
         header = ['time_epoch', 'time_delta', 'protocol', 'dst', 'sport', 'dport'] 
-        flow_extraction_new.flows_output(bursts, os.path.join(out_dir, 'flow_burst'), device)
-        flow_extraction_new.flows_output(bursts_only_udp, os.path.join(out_dir, 'flows'), device)
+        flow_extraction_new.flows_burst_output(bursts, os.path.join(out_dir, 'flow_burst'), device) # split into bursts
+        flow_extraction_new.flows_burst_output(bursts_only_udp, os.path.join(out_dir, 'flows_udp_burst'), device)   # only udp traffic is splitted into bursts IP traffic only 
+        flow_extraction_new.flows_output(flows, os.path.join(out_dir, 'flows_only'), device)    # flows_only IP traffic only 
+        flow_extraction_new.flows_output_withicmp(flows, os.path.join(out_dir, 'flows_and_icmp'), device)  # flows and icmp
         
         # * plot device-level charts 
         # TODO Distribution of protocol by total size

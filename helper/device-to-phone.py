@@ -26,7 +26,8 @@ for device_file in os.listdir(in_dir):
                 device_to_iphone[device_name] = device_to_iphone.get(device_name, [])
                 device_to_iphone[device_name].append(line.strip())
 
-
+if not os.path.exists(out_dir):
+    os.system('mkdir -pv %s' % out_dir)
 with open(os.path.join(out_dir, 'device_to_phone.txt'), 'w+') as f:
     f.write('Device to Android phone: \n')
     for k, v in device_to_android.items():

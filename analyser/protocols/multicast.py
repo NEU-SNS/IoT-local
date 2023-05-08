@@ -3,6 +3,11 @@ import json
 
 
 def parse_multicast_logfiles(out_dir):
+    """Count the number of multicast address each device uses
+
+    Args:
+        out_dir (_type_): _description_
+    """
     print('parsing multicast output')
     cur_out_dir = os.path.join(out_dir, 'protocols','multicast/')
     out_file = os.path.join(out_dir, 'protocols','multicast_info.txt')

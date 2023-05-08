@@ -175,18 +175,18 @@ def burst_split_onlyudp(flow_dic, threshold=1):
     # Initialise result
     result = {}
     for k, v in flow_dic.items(): # k: (trans_proto, dst, sport , dport)
-        if layer_4_below(k[1],k[2]):
+        if layer_4_below(k[2],k[3]):
             continue
         elif k[0] == 'tcp':
             result[k] = result.get(k,{})
-            result[k][v[0,0]] = v
+            result[k][v[0,0].astype(np.float64)] = v[:] # 
             continue
         # Compute difference between packets
         if len(v) < 2:
             continue
         ts = v[:, 0]
         diff = v[:, 1]
-        ts = ts.astype(np.float)
+        ts = ts.astype(np.float64)
         try:
             # diff = diff.astype(np.float)
             
@@ -273,7 +273,7 @@ def burst_split(flow_dic, threshold=1):
     # Return result
     return result
 
-def flows_output(results, out_dir, device):
+def flows_burst_output(results, out_dir, device):
     if not os.path.exists(out_dir):
         os.system('mkdir -pv %s' % out_dir)
         
@@ -282,7 +282,6 @@ def flows_output(results, out_dir, device):
     output = []
     for key, v in results.items():
         # key = (protocol, dst, sport, dport), sport dport = 0 if layer 3 or below
-        
         for ts, packets in v.items():
             tmp_volume = 0
             highest_protocol = set()
@@ -292,10 +291,99 @@ def flows_output(results, out_dir, device):
             highest_protocol = sorted(list(highest_protocol))
             cur_flow = [ts, key[0], key[1], key[2], key[3], ';'.join(highest_protocol), len(packets), tmp_volume, packets[0][-1]]
             output.append(cur_flow)
-            
+
+    # try:
     output = sorted(output, key=lambda x: x[0])
+    # except TypeError as e:
+    #     # print(np.array(output)[:,0])
+    #     print("TypeError: ", device, e)
+    #     with open(out_file, 'w') as f:
+    #         write = csv.writer(f)
+    #         write.writerow(['timestamp', 'trans_protocol', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
+    #         write.writerows(output)
+    #     exit(1)
+    
     with open(out_file, 'w') as f:
         write = csv.writer(f)
         write.writerow(['timestamp', 'trans_protocol', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
         write.writerows(output)
+
+def flows_output(results, out_dir, device):
     
+    # dict { key: tuple, value: packets}
+    if not os.path.exists(out_dir):
+        os.system('mkdir -pv %s' % out_dir)
+        
+    out_file = os.path.join(out_dir, '%s.csv' % device)
+    
+    output = []
+    for key, packets in results.items():
+        # key = (protocol, dst, sport, dport), sport dport = 0 if layer 3 or below
+        if key[2] == '0' :   # below layer 4 
+            continue
+        ts = packets[0][0]
+
+        tmp_volume = 0
+        highest_protocol = set()
+        for p in packets:
+            tmp_volume += int(p[-2])
+            highest_protocol.add(p[2])
+        highest_protocol = sorted(list(highest_protocol))
+        cur_flow = [ts, key[0], key[1], key[2], key[3], ';'.join(highest_protocol), len(packets), tmp_volume, packets[0][-1]]
+        output.append(cur_flow)
+
+    # try:
+    output = sorted(output, key=lambda x: x[0])
+    # except TypeError as e:
+    #     # print(np.array(output)[:,0])
+    #     print("TypeError: ", device, e)
+    #     with open(out_file, 'w') as f:
+    #         write = csv.writer(f)
+    #         write.writerow(['timestamp', 'trans_protocol', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
+    #         write.writerows(output)
+    #     exit(1)
+    
+    with open(out_file, 'w') as f:
+        write = csv.writer(f)
+        write.writerow(['timestamp', 'trans_protocol', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
+        write.writerows(output)
+
+def flows_output_withicmp(results, out_dir, device):
+    
+    # dict { key: tuple, value: packets}
+    if not os.path.exists(out_dir):
+        os.system('mkdir -pv %s' % out_dir)
+        
+    out_file = os.path.join(out_dir, '%s.csv' % device)
+    
+    output = []
+    for key, packets in results.items():
+        # key = (protocol, dst, sport, dport), sport dport = 0 if layer 3 or below
+        if key[2] == '0' and key[0] != 'icmp':   # below layer 4 and not icmp
+            continue
+        ts = packets[0][0]
+
+        tmp_volume = 0
+        highest_protocol = set()
+        for p in packets:
+            tmp_volume += int(p[-2])
+            highest_protocol.add(p[2])
+        highest_protocol = sorted(list(highest_protocol))
+        cur_flow = [ts, key[0], key[1], key[2], key[3], ';'.join(highest_protocol), len(packets), tmp_volume, packets[0][-1]]
+        output.append(cur_flow)
+
+    # try:
+    output = sorted(output, key=lambda x: x[0])
+    # except TypeError as e:
+    #     # print(np.array(output)[:,0])
+    #     print("TypeError: ", device, e)
+    #     with open(out_file, 'w') as f:
+    #         write = csv.writer(f)
+    #         write.writerow(['timestamp', 'trans_protocol', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
+    #         write.writerows(output)
+    #     exit(1)
+    
+    with open(out_file, 'w') as f:
+        write = csv.writer(f)
+        write.writerow(['timestamp', 'ip.proto', 'dst', 'device_port', 'remote_port', 'highest_protocol', 'flow_length', 'volume', 'inbound'])
+        write.writerows(output)

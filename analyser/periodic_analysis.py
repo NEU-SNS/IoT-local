@@ -64,26 +64,26 @@ for a, b in enumerate(lparas):
     print('Dname ', dname)
     header = ['timestamp', 'protocol', 'dst', 'flow_length']
     # continue
-    nums = data['flow_length'].values
+    # nums = data['flow_length'].values
     times = data['timestamp'].values
-    protocols = data['protocol'].values
+    protocols = data['highest_protocol'].values # highest_protocol or trans_protocol
     hosts = data['dst'].fillna('').values
     
     
     if len(times) <= 1:
         continue
-    # for i in range(len(protocols)):
-    #     # tmp2 = protocols[i].split(';')
-    #     if 'TCP' in protocols[i]:
-    #         protocols[i] = 'TCP'
-    #     elif 'UDP' in protocols[i]:
-    #         protocols[i] = 'UDP'
-    #     elif 'TLS' in protocols[i]:
-    #         protocols[i] = 'TLS'
-    #     if ';' in protocols[i]:
-    #         tmp = protocols[i].split(';')
-    #         protocols[i] = ' & '.join(tmp)
-    #         # print(protocols[i])
+    for i in range(len(protocols)):
+        # tmp2 = protocols[i].split(';')
+        if 'tcp' in protocols[i]:
+            protocols[i] = 'tcp'
+        elif 'udp' in protocols[i]:
+            protocols[i] = 'udp'
+        elif 'tls' in protocols[i]:
+            protocols[i] = 'tls'
+        if ';' in protocols[i]:
+            tmp = protocols[i].split(';')
+            protocols[i] = ' & '.join(tmp)
+            # print(protocols[i])
     protocol_set = set(protocols)
     print(protocol_set)
     
@@ -205,7 +205,7 @@ for a, b in enumerate(lparas):
             domain_count2 = len(count_dic.keys())
 
             print('Domain count unique block:', domain_count2)
-            if count_dic == {}:
+            if count_dic == {} or domain_count2 <= 1:
                 continue
             # if domain_count[cur_domain] <= 10:
             #     continue
@@ -264,7 +264,7 @@ for a, b in enumerate(lparas):
             # print(len(x), x, y)
 
             os.makedirs('%s/%s' % (file_path,dname), exist_ok=True)
-
+            """
             plt.figure()
             plt.plot(x, y) #
             plt.grid()
@@ -275,6 +275,7 @@ for a, b in enumerate(lparas):
             plt.savefig('%s/%s/%s_%s.png' % (file_path,dname,cur_domain, cur_protocol))
             # plt.show()
             plt.close()
+            """
             count=0
             time_list =  []
             if domain_count2 < 30:

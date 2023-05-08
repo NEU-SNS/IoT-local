@@ -144,9 +144,6 @@ def mdns_analysis(out_dir, dict_dec, packets_dict):
             if packet.mdns.dns_flags_response == '0':
                 query_count[device] = query_count.get(device, 0) + 1
                 
-                
-                # resp_addr = packet.mdns.dns_a
-                
                 if int(packet.mdns.dns_count_queries) > 1:
                     for line in packet.mdns._get_all_field_lines():
                         # if line.strip().startswith('Name:'):
@@ -167,8 +164,6 @@ def mdns_analysis(out_dir, dict_dec, packets_dict):
             else:
                 response_count[device] = response_count.get(device, 0) + 1
                 
-                
-                # if int(packet.mdns.dns_count_answers) > 1:
                 for line in packet.mdns._get_all_field_lines():
                     # if line.strip().startswith('Name:'):
                     if re.match('(.*)(: type)(.*)(, class)(.*)', line) != None:
@@ -180,21 +175,7 @@ def mdns_analysis(out_dir, dict_dec, packets_dict):
                             exit(1)
                         resp_addr = line.strip().split()[-1]
                         response_records[(resp_name, resp_type, resp_addr)] = response_records.get((resp_name, resp_type, resp_addr), 0) + 1
-                # else:
-                #     resp_name = packet.mdns.dns_resp_name
-                #     resp_type = packet.mdns.dns_resp_type
-                #     if resp_type == '1':
-                #         resp_addr = packet.mdns.dns_a
-                #     elif resp_type == '28':
-                #         resp_addr = packet.mdns.dns_aaaa
-                #     else:
-                #         resp_addr = ' '
-                    
-                #     if resp_type in type_dict:
-                #         resp_type = type_dict[resp_type]
-                #     response_records[(resp_name, resp_type, resp_addr)] = response_records.get((resp_name, resp_type, resp_addr), 0) + 1
-                
-                
+
                 
         if not os.path.exists(cur_out_dir):
             os.system('mkdir -pv %s' % cur_out_dir)
@@ -298,11 +279,138 @@ def dhcpv6_analysis(packet):
 def icmpv6_analysis():
     return 0
 
-def http_analysis():
+def http_analysis(out_dir, dict_dec, packets_dict):
     
     # TODO HTTP suspicious user-agent
     # TODO numerical IP 
-    return 0
+    cur_out_dir = os.path.join(out_dir, 'protocols','http')
+    
+    # get_count = {}
+    # post_count = {}
+    request_count = {}
+    get_count = {}
+    post_count = {}
+    response_count = {}
+    mac_dic = read_mac_address()
+    # ssdp&&!icmp
+    for device in dict_dec:
+
+        if device not in packets_dict:
+            print('No HTTP Device: %s' % device)
+            continue
+        print('analyzing HTTP packets...', device)
+        
+        my_device_mac = mac_dic[device]
+        
+        
+        request_method = {}
+        request_uri = {}
+        request_version = {}
+        request_user_agent = {}
+        # target_device = {}
+        # request_header = {}
+        # request_location = {}
+        # request_server = {}
+        
+        response_code = {}
+        response_version = {}
+        response_server = {}
+        
+        # response_header = {}
+        # response_location = {}
+        
+        # request_method = {}
+
+        count = 0 
+        
+        for packet in packets_dict[device]:
+            dst_mac = packet.eth.dst
+            src_mac = packet.eth.src
+            
+            if src_mac == my_device_mac:
+                # tcp ack packet filter
+                if len(packet.layers) <= 3:
+                    continue
+                
+                tmp_all_fields = packet.http._all_fields
+                # requests
+                if 'http.request' in tmp_all_fields:
+                    request_count[device] = request_count.get(device, 0) + 1 
+                    
+                    if packet.http.request_method == 'GET':
+                        get_count[device] = get_count.get(device, 0) + 1
+                    elif packet.http.request_method == 'POST':
+                        post_count[device] = post_count.get(device, 0) + 1
+                    
+                    request_method[packet.http.request_method] = request_method.get(packet.http.request_method, 0) + 1
+                    if 'http.request.full_uri' in tmp_all_fields:
+                        request_uri[packet.http.request_full_uri] = request_uri.get(packet.http.request_full_uri, 0) + 1
+                    # request_info[packet.http.chat]
+                    
+                    if 'http.request.version' in tmp_all_fields:
+                        request_version[packet.http.request_version] = request_version.get(packet.http.request_version, 0) + 1
+                    
+                    if 'http.user_agent' in tmp_all_fields:
+                        request_user_agent[packet.http.user_agent] = request_user_agent.get(packet.http.user_agent, 0) + 1
+                elif 'http.response' in tmp_all_fields:
+                    response_count[device] = response_count.get(device, 0) + 1 
+                    
+                    response_code[packet.http.response_code] = response_code.get(packet.http.response_code, 0) + 1
+                    # packet.http.chat
+                    if 'http.response.version' in tmp_all_fields:
+                        response_version[packet.http.response_version] = response_version.get(packet.http.response_version, 0) + 1
+                    if 'http.server' in tmp_all_fields: 
+                        response_server[packet.http.server] = response_server.get(packet.http.server, 0) + 1
+                    # packet.http.file_data
+            
+        if not os.path.exists(cur_out_dir):
+            os.system('mkdir -pv %s' % cur_out_dir)
+        out_file = os.path.join(cur_out_dir, '%s.txt' % device)
+        
+        with open(out_file, 'w') as f:
+            # request method
+            if len(request_method) != 0:
+            
+                for i, j in request_method.items():
+                    f.write('Request method %s: %d\n' % (i, j))
+            
+            for i, j in request_uri.items():
+                f.write('Request full uri %s: %d\n' % (i, j))
+            
+
+            if len(request_version) != 0:
+                for i, j in request_version.items():
+                    f.write('Request version %s: %d\n' % (i, j))
+            if len(request_user_agent) != 0:
+                for i, j in request_user_agent.items():
+                    f.write('Request UA %s: %d\n' % (i, j))
+            # response:
+            f.write('\n')
+            # response code
+            # sorted_response_code = sorted([(k,v) for k,v in response_code.items()], key=lambda t:t[1], reverse=True)
+            if len(response_code) != 0:
+                for i, j in response_code.items():
+                    f.write('Response code %s: %d\n' % (i, j))
+            if len(response_version) != 0:
+                
+                for i, j in response_version.items():
+                    f.write('Response version %s: %d\n' % (i, j))
+                    # f.write('%s\n' % lo)
+            if len(response_server) != 0:
+                for i, j in response_server.items():
+                    f.write('Response server %s: %d\n' % (i, j))
+
+    
+    return_list = []
+    for device in dict_dec:
+        # count += 1
+        print(device, request_count.get(device, 0), get_count.get(device, 0), post_count.get(device, 0), response_count.get(device, 0))
+        if (request_count.get(device, 0) + response_count.get(device, 0) ) == 0:
+            continue
+        return_list.append([device, request_count.get(device, 0), get_count.get(device, 0), post_count.get(device, 0), response_count.get(device, 0)])
+        
+    header = ['device', 'request_count', 'get_count', 'post_count', 'response_count']
+    return (header, return_list)
 
 def udp_analysis():
     return 0
@@ -392,6 +500,8 @@ def tplink_smarthome_analysis(out_dir, dict_dec, packets_dict):
             os.system('mkdir -pv %s' % cur_out_dir)
         out_file = os.path.join(cur_out_dir, '%s.txt' % device)
         
+        if (sent_tcp + sent_udp + received_tcp+ received_udp) == 0:
+            continue
         with open(out_file, 'w') as f:
             f.write('Sent TCP: %d\n' % (sent_tcp))
             f.write('Sent UDP: %d\n' % (sent_udp))
@@ -510,17 +620,22 @@ def ssdp_analysis(out_dir, dict_dec, packets_dict):
     mac_dict = read_mac_address()
     # ssdp&&!icmp
     for device in dict_dec:
-        print('analyzing SSDP packets...', device)
         my_device_mac = mac_dict[device]
         if device not in packets_dict:
+            print('No SSDP Device: %s' % device)
             continue
+        print('analyzing SSDP packets...', device)
         
-        target_device = {}
+        # target_device = {}
         request_info = {}
         request_method = {}
+        request_header = {}
+        request_location = {}
+        request_server = {}
         response_code = {}
-        response_location = ''
-        response_server = ''
+        response_header = {}
+        response_location = {}
+        response_server = {}
         count = 0 
         
         for packet in packets_dict[device]:
@@ -530,56 +645,85 @@ def ssdp_analysis(out_dir, dict_dec, packets_dict):
             dst_mac = packet.eth.dst
             src_mac = packet.eth.src
             request = 0
+            # mutlicast requests
             if is_multicast(dst_mac):
                 multicast_count[device] = multicast_count.get(device, 0) + 1 
                 request_count[device] = request_count.get(device, 0) + 1 
                 # print(packet.ssdp._all_fields)
-                if packet.ssdp.http_request_method != 'M-SEARCH':
-                    request_method[packet.ssdp.http_request_method] = request_method.get(packet.ssdp.http_request_method, 0) + 1
+
+                tmp_request_method = packet.ssdp.http_request_method
+                request_method[tmp_request_method] = request_method.get(tmp_request_method, 0) + 1
                     
                 # print(packet.ssdp.http_request_method)
                 # print(packet.ssdp.http_request_uri)
                 # print(packet.ssdp.http_host)
                 # print(packet.ssdp.http_request_full_uri)
+                if tmp_request_method.strip() == 'NOTIFY':
+                    request_location[packet.ssdp.http_location] = request_location.get(packet.ssdp.http_location, 0) + 1
+                    try: 
+                        request_server[packet.ssdp.http_server] = request_server.get(packet.ssdp.http_server, 0) + 1
+                    except:
+                        pass 
                 request_info[packet.ssdp.http_request_full_uri] = request_info.get(packet.ssdp.http_request_full_uri, 0) + 1
+                for line in packet.ssdp._get_all_field_lines():
+                    line = line.strip()
+                    if line.startswith('ST') or line.startswith('NT'):
+                        request_header[line] = request_header.get(line, 0) + 1
+                        break
                 
             else:
-                unicast_count[device] = unicast_count.get(device, 0) + 1 
-                # print(packet.ssdp)
-                try:
-                    tmp = packet.ssdp.http_request_method
-                    # print(packet.ssdp.http_request_uri)
-                    # print(packet.ssdp.http_host)
-                    # print(packet.ssdp.http_request_full_uri)
-                    request_count[device] = request_count.get(device, 0) + 1 
-                    request = 1
-                except:
-                    # print(packet.ssdp.http_response_code)
-                    # print(packet.ssdp.http_location)
-                    # print(packet.ssdp.http_server)
-                    reply_count[device] = reply_count.get(device, 0) + 1 
+                
+                
                 if src_mac == my_device_mac:
-                    if request == 1:
-                        if packet.ssdp.http_request_method != 'M-SEARCH':
-                            request_method[packet.ssdp.http_request_method] = request_method.get(packet.ssdp.http_request_method, 0) + 1
-                        request_info[packet.ssdp.http_request_full_uri] = request_info.get(packet.ssdp.http_request_full_uri, 0) + 1
+                    # unicast 
+                    unicast_count[device] = unicast_count.get(device, 0) + 1 
+
+                    tmp_all_fields = packet.ssdp._all_fields
+                    if 'http.request.method' in tmp_all_fields:
+                        request_count[device] = request_count.get(device, 0) + 1 
+                        request = 1
                     else:
-                        response_code[packet.ssdp.http_response_code] = response_code.get(packet.ssdp.http_response_code, 0) + 1
-                        if len(response_location) == 0:
-                            response_location = packet.ssdp.http_location
-                            response_server = packet.ssdp.http_server
-                            
+                        reply_count[device] = reply_count.get(device, 0) + 1 
+                    # try:
+                    #     # if is request
+                    #     if packet.ssdp.http_request_method:
+                    #         request_count[device] = request_count.get(device, 0) + 1 
+                    #         request = 1
+                    # except:
+                    #     # print(packet.ssdp.http_response_code)
+                    #     # print(packet.ssdp.http_location)
+                        # print(packet.ssdp.http_server)
                         
-                    
-                    
-            # print(packet.ssdp.http_host)
-            # print(packet.http.request.method)
-            # print(packet.http.request.url)
-            # print(packet.http.request.host)
-            # print(packet.http.request.full_url)
-            # count += 1
-            # if count > 30:
-            #     exit(0)
+                   
+                    if request == 1:
+                        # unicast request 
+                        tmp_request_method = packet.ssdp.http_request_method
+                        request_method[tmp_request_method] = request_method.get(tmp_request_method, 0) + 1
+                        request_info[packet.ssdp.http_request_full_uri] = request_info.get(packet.ssdp.http_request_full_uri, 0) + 1
+                        if tmp_request_method.strip() == 'NOTIFY':
+                            request_location[packet.ssdp.http_location] = request_location.get(packet.ssdp.http_location, 0) + 1
+                            try:
+                                request_server[packet.ssdp.http_server] = request_server.get(packet.ssdp.http_server, 0) + 1
+                            except:
+                                pass
+                        for line in packet.ssdp._get_all_field_lines():
+                            line = line.strip()
+                            if line.startswith('ST') or line.startswith('NT'):
+                                request_header[line] = request_header.get(line, 0) + 1
+                                break
+
+                    else:
+                        # unicast response
+                        response_code[packet.ssdp.http_response_code] = response_code.get(packet.ssdp.http_response_code, 0) + 1
+
+                        for line in packet.ssdp._get_all_field_lines():
+                            line = line.strip()
+                            if line.startswith('ST') or line.startswith('NT'):
+                                response_header[line] = response_header.get(line, 0) + 1
+                                break
+
+                        response_location[packet.ssdp.http_location] = response_location.get(packet.ssdp.http_location, 0) + 1
+                        response_server[packet.ssdp.http_server] = response_server.get(packet.ssdp.http_server, 0) + 1
                 
         if not os.path.exists(cur_out_dir):
             os.system('mkdir -pv %s' % cur_out_dir)
@@ -588,28 +732,45 @@ def ssdp_analysis(out_dir, dict_dec, packets_dict):
         with open(out_file, 'w') as f:
             # request method
             if len(request_method) != 0:
-                sorted_request_method = sorted([(k,v) for k,v in request_method.items()], key=lambda t:t[1], reverse=True)
+                # sorted_request_method = sorted([(k,v) for k,v in request_method.items()], key=lambda t:t[1], reverse=True)
             
-                for i in sorted_request_method:
-                    f.write('Request method %s: %d\n' % (i[0], i[1]))
+                for i, j in request_method.items():
+                    f.write('Request method %s: %d\n' % (i, j))
             
             # request info
-            sorted_request_info = sorted([(k,v) for k,v in request_info.items()], key=lambda t:t[1], reverse=True)
-            for i in sorted_request_info:
-                f.write('Request full uri %s: %d\n' % (i[0], i[1]))
-                
+            # sorted_request_info = sorted([(k,v) for k,v in request_info.items()], key=lambda t:t[1], reverse=True)
+            for i, j in request_info.items():
+                f.write('Request full uri %s: %d\n' % (i, j))
+            
+            # request header
+            sorted_request_header = sorted([(k,v) for k,v in request_header.items()], key=lambda t:t[1], reverse=True)
+            # print(sorted_request_header)
+            for i in sorted_request_header:
+                f.write('Request contents %s: %d\n' % (i[0], i[1]))
+            if len(request_location) != 0:
+                for i, j in request_location.items():
+                    f.write('Request location %s: %d\n' % (i, j))
+            if len(request_server) != 0:
+                for i, j in request_server.items():
+                    f.write('Request server %s: %d\n' % (i, j))
             # response:
             f.write('\n')
             # response code
-            sorted_response_code = sorted([(k,v) for k,v in response_code.items()], key=lambda t:t[1], reverse=True)
-            for i in sorted_response_code:
-                f.write('Response code %s: %d\n' % (i[0], i[1]))
+            # sorted_response_code = sorted([(k,v) for k,v in response_code.items()], key=lambda t:t[1], reverse=True)
+            for i, j in response_code.items():
+                f.write('Response code %s: %d\n' % (i, j))
             if len(response_location) != 0:
-                f.write('Response location: ')
-                f.write('%s\n' % response_location)
+                
+                for i, j in response_location.items():
+                    f.write('Response location %s: %d\n' % (i, j))
+                    # f.write('%s\n' % lo)
             if len(response_server) != 0:
-                f.write('Response server: %s\n' % response_server)
-            
+                for i, j in response_server.items():
+                    f.write('Response server %s: %d\n' % (i, j))
+            # request header
+            sorted_response_header = sorted([(k,v) for k,v in response_header.items()], key=lambda t:t[1], reverse=True)
+            for i in sorted_response_header:
+                f.write('Response contents %s: %d\n' % (i[0], i[1]))
     
     return_list = []
     for device in dict_dec:
@@ -811,7 +972,7 @@ def arp_analysis(out_dir, dict_dec, packets_dict):
         if not os.path.exists(cur_out_dir):
             os.system('mkdir -pv %s' % cur_out_dir)
         out_file = os.path.join(cur_out_dir, '%s.txt' % device)
-        print(target_device)
+        # print(target_device)
         with open(out_file, 'w') as f:
             sorted_target_device = sorted([(k,v) for k,v in target_device.items()], key=lambda t:t[1], reverse=True)
             for d in sorted_target_device:
