@@ -250,9 +250,9 @@ def main():
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
 
         device = dev_dir
-        # if device != 'roku-tv' and device != 'ikea-hub' :  # and device != 'google-home-mini'
-        #     continue
-        # if not device.startswith('echodot3'):
+        if device != 'roku-tv': # and device != 'ikea-hub' :  # and device != 'google-home-mini'
+            continue
+        # if not device.startswith('echodot3a'):
         #     continue
         if device not in dict_dec:
             dict_dec[device] = []

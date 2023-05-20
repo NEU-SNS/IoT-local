@@ -13,9 +13,41 @@ from analyser.protocols.mc import MC_analysis
 
 
 
+"""
+Protocol-wise analysis 
+inputs: 
+    out_dir: output directory
+    dict_dec: a dictionary with device names as keys and pcap files as values
+    packets_dict: a dictionary of pyshark-processed packets, keys are the device name and values are packets
+return:
+    (header, return_list)
+"""
+
+
 
     
+# TODO integrate the cert extraction script to this 
+def extract_tls_cert(capture):
+    count = 0
+    for packet in capture:
+        ca_count = analyzePacket(packet, ca_count)
+        count += 1
+    print('%s: %d' %(count))
+    capture.close()
+    return count 
+
+# TODO
+def tls_analysis():
+
+    return 0 
+
+def udp_analysis():
+    return 0
+
+def llc_analysis(out_dir, dict_dec, packets_dict):
     
+    return 0 
+
 def protocols_analysis_pyshark(out_dir, dict_dec, all_packets_captures, pcap_filter):
     match pcap_filter.lower():
         case 'dhcp': 

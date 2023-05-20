@@ -37,7 +37,6 @@ google-home-mini3
 google-nest-mini1
 google-nest-mini2
 gosund-bulb1
-govee-led1
 homepod
 homepod-mini1
 homepod-mini2
@@ -89,7 +88,6 @@ withings-sleep
 withings-thermo
 wiz-bulb
 wyze-cam
-xiaomi-induction
 xiaomi-ricecooker
 yeelight-bulb
 yi-camera

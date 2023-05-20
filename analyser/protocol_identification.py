@@ -351,7 +351,7 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
         
         tmp_eth_unicast = {}
         
-        
+        upnp_logs = {}
         tcp_output = {}
         udp_output = {}
         tcp_output_directional = {}
@@ -439,7 +439,7 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                     highest_protocol = cur_layers[2]
                     
                 # * layer 5
-                if len(cur_layers) > 3 and cur_layers[2] != 'icmp' and cur_layers[3].lower() not in ['data', 'ajp13', '_ws.malformed', 'ecatf']:
+                if len(cur_layers) > 3 and cur_layers[2] != 'icmp' and cur_layers[3].lower() not in ['ajp13', '_ws.malformed', 'ecatf']:
                     tmp_layer_name = cur_layers[3]
                     
                     special_port_list = ['44818' , # enip
@@ -453,20 +453,23 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
                     
                     if tmp_layer_name == 'tcp.segments' and len(cur_layers) > 4:
                         tmp_layer_name = cur_layers[4] 
-                    elif is_UDP and tmp_layer_name not in ['dns','mdns', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome'] and len(packet.udp.payload) > 350:
-                        
-                        if check_upnp(packet.udp.payload):  
-                            # is UPnP/SSDP
-                            tmp_layer_name = 'ssdp'
                     elif is_UDP and sport=='55444' and dport=='55444':
                         # TODO add google ones. 
                         tmp_layer_name = 'Amazon_55444'
+                    elif (is_UDP and (dport=='6666' or dport=='6667')) or (not is_UDP and dport=='6668'):
+                        tmp_layer_name = 'TuyaLP'
+                    elif is_UDP and (tmp_layer_name not in ['dns','mdns', 'dhcp', 'ssdp', 'classicstun', 'tplink-smarthome']) and int(packet.length) > 100:
+                        # print(packet.sniff_timestamp)
+                        if check_upnp(packet.udp.payload, dport, upnp_logs):  
+                            # is UPnP/SSDP
+                            tmp_layer_name = 'ssdp'
                     elif not is_UDP and (sport in special_port_list or dport in special_port_list) and tmp_layer_name not in ['tcp','tls']:
                         tmp_layer_name = cur_layers[2]
                     
                     if tmp_layer_name.lower() != 'data':
                         tmp_protocols['5'][tmp_layer_name] = tmp_protocols['5'].get(tmp_layer_name, 0) + 1
                         highest_protocol = tmp_layer_name
+
                 # print(tmp_protocols)
                 
                 # if is_UDP and cur_layers.index('udp') != len(cur_layers)-1 and \
@@ -527,6 +530,14 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
         flow_extraction_new.flows_output(flows, os.path.join(out_dir, 'flows_only'), device)    # flows_only IP traffic only 
         flow_extraction_new.flows_output_withicmp(flows, os.path.join(out_dir, 'flows_and_icmp'), device)  # flows and icmp
         
+        # * upnp misclassificaiton and correction logs
+        if not os.path.exists(os.path.join(out_dir, 'upnp_misclassificaiton')):
+            os.system('mkdir -pv %s' % os.path.join(out_dir, 'upnp_misclassificaiton')) 
+        if len(upnp_logs) > 0:
+            upnp_log_file = os.path.join(out_dir, 'upnp_misclassificaiton', '%s.json' % device)
+            with open(upnp_log_file, 'w') as f:
+                f.write(json.dumps(upnp_logs, indent=4))
+            
         # * plot device-level charts 
         # TODO Distribution of protocol by total size
         
@@ -570,7 +581,7 @@ def protocol_identification(dict_dec, all_packets_captures, out_dir):
         # addressing_method_list
     return [protocol_dict, destination_distribution_dict, protocol_distribution_per_addressing_method, eth_unicast_dict]
         
-def check_upnp(udp_payload):
+def check_upnp(udp_payload, dst_port, upnp_logs):
     udp_payload = ''.join(udp_payload.split(':'))
     # print(udp_payload)
     try:
@@ -579,6 +590,7 @@ def check_upnp(udp_payload):
     except:
         return False
     if 'ssdp' in decoded_payload.lower() or 'upnp' in decoded_payload.lower():
+        upnp_logs[dst_port] = upnp_logs.get(dst_port, 0) + 1
         return True
     return False
 
