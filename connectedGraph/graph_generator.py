@@ -315,12 +315,20 @@ def undirected_graph(in_dir, out_dir):
     print('Count non-empty files:', len(count))
     
     ave = 0
+    median = []
     for dev in count:
         ave += len(count[dev])
+        median.append(len(count[dev]))
         print(dev, len(count[dev]))
-    ave = ave/ len(count)
+    ave = ave/ 93 # len(count)
+    # 93- len(median)
+    padded_median = median + [0] * (93 - len(median))
     print('Average:', ave)
+    print('Median:', np.median(padded_median))
+    print('95th:', np.percentile(padded_median, 95))
 
+    return 0 
+    
     volume_standardization = np.asarray(volume_standardization).reshape(-1, 1)
     min_max_scaler.fit(volume_standardization)
     if in_dir.endswith('/'):

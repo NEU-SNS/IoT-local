@@ -9,9 +9,10 @@ import os
 # matplotlib.use('Agg')
 
 # Define the paths to the two folders containing the TXT files
-tcp_folder_path = '/home/hutr/local_output/idle-dataset-dec-new/tcp_output'
-udp_folder_path = '/home/hutr/local_output/idle-dataset-dec-new/udp_output'
+tcp_folder_path = '/home/hutr/local_output/idle-dataset-dec-new/tcp_output_cr'
+udp_folder_path = '/home/hutr/local_output/idle-dataset-dec-new/udp_output_cr'
 device_file = '/home/hutr/local-traffic-analysis/local-devices.txt'
+device_file_formal = '/home/hutr/local-traffic-analysis/local-devices-formal-name.txt'
 
 
 def output_data(out_file: str, device_pairs_list, single_node_list) -> int:
@@ -24,6 +25,18 @@ def output_data(out_file: str, device_pairs_list, single_node_list) -> int:
             header = hf.read()
             of.write(header)
 
+        device_list_formal = {}
+        with open(device_file_formal) as f:
+            lines = f.readlines()
+            for line in lines:
+                line = line.strip()
+                device_list_formal[line.split(' ')[0]] = " ".join(line.split(' ')[1:])
+        print(device_list_formal)
+        for i in range(len(device_pairs_list)):
+            device_pairs_list[i][0] = device_list_formal[device_pairs_list[i][0]]
+            device_pairs_list[i][1] = device_list_formal[device_pairs_list[i][1]]
+        for i in range(len(single_node_list)):
+            single_node_list[i] = device_list_formal[single_node_list[i]]
         nodes = set()
         for dev1, dev2, protocol in device_pairs_list:
         
@@ -41,11 +54,11 @@ def output_data(out_file: str, device_pairs_list, single_node_list) -> int:
         # Generate the text list of nodes
         node_colors = {}
         for dev in nodes:
-            if 'echo' in dev or 'fire' in dev:
+            if 'Echo' in dev or 'Fire' in dev or 'Amazon' in dev:
                 node_colors[dev] = '#00eaff'
-            elif 'google' in dev or 'nest' in dev:
+            elif 'Google' in dev or 'Nest' in dev:
                 node_colors[dev] =  '#ffa600'
-            elif 'apple' in dev or 'homepod' in dev:
+            elif 'Apple' in dev or 'HomePod' in dev:
                 node_colors[dev] = '#292627'
         nodes = list(nodes)
         for i in range(len(nodes)):
@@ -109,16 +122,16 @@ for filename in os.listdir(tcp_folder_path):
         devices_set = read_txt_file(filepath)
         device_name = filename.split('.')[0]
         for dev in devices_set:
-            # if dev in device_list:
-            devices_has_traffic.add(dev)
-            devices_has_traffic.add(device_name)
-            device_pair = tuple(sorted([device_name, dev]))
-            if device_pair not in devices_dict:
-                devices_dict[device_pair] = set()
-            devices_dict[device_pair].add('TCP')
+            if dev in device_list:
+                devices_has_traffic.add(dev)
+                devices_has_traffic.add(device_name)
+                device_pair = tuple(sorted([device_name, dev]))
+                if device_pair not in devices_dict:
+                    devices_dict[device_pair] = set()
+                devices_dict[device_pair].add('TCP')
             
             # clusters:
-            if 'echo' in device_name or 'echo' in dev:
+            if 'echo' in device_name or 'echo' in dev or 'fire' in device_name or 'fire' in dev:
                 if device_pair not in dict_echo:
                     dict_echo[device_pair] = set()
                 dict_echo[device_pair].add('TCP')
@@ -139,13 +152,13 @@ for filename in os.listdir(udp_folder_path):
         devices_set = read_txt_file(filepath)
         device_name = filename.split('.')[0]
         for dev in devices_set:
-            # if dev in device_list:
-            devices_has_traffic.add(dev)
-            devices_has_traffic.add(device_name)
-            device_pair = tuple(sorted([device_name, dev]))
-            if device_pair not in devices_dict:
-                devices_dict[device_pair] = set()
-            devices_dict[device_pair].add('UDP')
+            if dev in device_list:
+                devices_has_traffic.add(dev)
+                devices_has_traffic.add(device_name)
+                device_pair = tuple(sorted([device_name, dev]))
+                if device_pair not in devices_dict:
+                    devices_dict[device_pair] = set()
+                devices_dict[device_pair].add('UDP')
             
             # clusters:
             if 'echo' in device_name or 'echo' in dev:
@@ -173,7 +186,7 @@ for device_pair, trans_protocol in devices_dict.items():
     
 
 # out_file = os.path.join(out_dir, os.path.basename(in_dir) + '.html')
-output_data('connectedGraph/test-new.html', device_pairs_list, single_node_list) # 
+output_data('connectedGraph/test-new-cr.html', device_pairs_list, single_node_list) # 
 
 
 # clusters:
@@ -181,16 +194,16 @@ device_pairs_list = []
 for device_pair, trans_protocol in dict_echo.items():
     protocol = 'Both' if len(trans_protocol)==2 else list(trans_protocol)[0]
     device_pairs_list.append([device_pair[0], device_pair[1], protocol])
-output_data('connectedGraph/test-echo.html', device_pairs_list, []) # 
+output_data('connectedGraph/test-echo-cr.html', device_pairs_list, []) # 
 
 device_pairs_list = []
 for device_pair, trans_protocol in dict_google.items():
     protocol = 'Both' if len(trans_protocol)==2 else list(trans_protocol)[0]
     device_pairs_list.append([device_pair[0], device_pair[1], protocol])
-output_data('connectedGraph/test-google.html', device_pairs_list, []) # 
+output_data('connectedGraph/test-google-cr.html', device_pairs_list, []) # 
 
 device_pairs_list = []
 for device_pair, trans_protocol in dict_apple.items():
     protocol = 'Both' if len(trans_protocol)==2 else list(trans_protocol)[0]
     device_pairs_list.append([device_pair[0], device_pair[1], protocol])
-output_data('connectedGraph/test-apple.html', device_pairs_list, []) # 
+output_data('connectedGraph/test-apple-cr.html', device_pairs_list, []) # 

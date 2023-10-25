@@ -1,7 +1,6 @@
 from analyser.utils import *
-from analyser.flow_extraction import extract_single, burst_split
-import analyser.plotting as plotting
-# from analyser.extract_ca import analyzePacket
+# from analyser.flow_extraction import extract_single, burst_split
+# import analyser.plotting as plotting
 from analyser.protocols_analysis import * 
 from analyser.all_device_analysis import * 
 from analyser.vis import *
@@ -250,8 +249,8 @@ def main():
         # output_file = os.path.join(out_dir, dev_dir + '.csv') # Output file
 
         device = dev_dir
-        if device != 'roku-tv': # and device != 'ikea-hub' :  # and device != 'google-home-mini'
-            continue
+        # if device != 'yeelight-bulb': # and device != 'ikea-hub' :  # and device != 'google-home-mini'
+        #     continue
         # if not device.startswith('echodot3a'):
         #     continue
         if device not in dict_dec:
@@ -417,12 +416,12 @@ def multiprocessing_protocol_wise_analysis(out_dir, dict_dec, all_packets_captur
             tmp_sum += tmp_results[j][i]
         overall_result[i] = tmp_sum
     
-    
-    with open(protocols_out_file, 'w') as f:
-        write = csv.writer(f)
-        write.writerow(header)
-        write.writerows(tmp_results)
-        write.writerow(overall_result)
+    if os.path.exists(os.path.join(out_dir, 'protocols')):
+        with open(protocols_out_file, 'w') as f:
+            write = csv.writer(f)
+            write.writerow(header)
+            write.writerows(tmp_results)
+            write.writerow(overall_result)
 
 
 def run_protocol_analysis(input_wrapper, procnum, return_dict):

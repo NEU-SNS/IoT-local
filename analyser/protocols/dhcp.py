@@ -18,6 +18,7 @@ def dhcp_analysis(out_dir, dict_dec, packets_dict):
         vendor_class_id = set()
         device_hostname = set()
         dhcp_type = {}
+        option_set = set()
         for packet in packets_dict[device]:
             # print(packet)
 
@@ -51,6 +52,10 @@ def dhcp_analysis(out_dir, dict_dec, packets_dict):
                         request_info.add(line.strip().split(':')[1])
             
             tmp_all_fields = packet.dhcp._all_fields
+            
+            for options in tmp_all_fields:
+                if options.strip().startswith('dhcp.option.'):
+                    option_set.add(options.strip())
             # if len(device_hostname) == 0:
             if 'dhcp.option.hostname' in tmp_all_fields:
             # try:
@@ -70,6 +75,10 @@ def dhcp_analysis(out_dir, dict_dec, packets_dict):
             f.write('Parameter Request List: \n')
             for p in request_info:
                 f.write(p)
+                f.write('\n')
+            f.write('DHCP Option List: \n')
+            for o in option_set:
+                f.write(o)
                 f.write('\n')
             if len(device_hostname) != 0:
                 f.write('Host Name: ')

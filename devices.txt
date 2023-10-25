@@ -149,3 +149,5 @@ a0:d2:b1:e9:d2:cd blink-doorbell
 7c:61:66:67:ea:d2 echodot3uk
 40:f6:bc:20:be:d8 echodot4c
 22:ef:03:1a:97:b9 router
+26:0a:71:53:19:7b iotvm-local
+e4:5f:01:d5:e9:8a imdea-pi

@@ -42,7 +42,7 @@ This repository includes scripts to analyze local traffic of smart home IoT devi
 ### `protocol_statistics.py`: log parsing of pyshark based protocol statistics (and tshark based protocol statistics as backup)
 `python3 protocol_statistics.py ~/2022-datasets/idle-dataset-dec ~/local_output/idle-dataset-dec/ -plot _overall_manual_processed.txt`
 
-### `analysis`: protocol-wise analysis
+### `analysis`: specific protocol-wise analysis
 `python3 -u analysis.py ~/2022-datasets/idle-dataset-dec ~/local_output/idle-dataset-dec-new/ -f PROTOCOL`
 
 `python3 analyser/protocol_parser/dhcp.py`

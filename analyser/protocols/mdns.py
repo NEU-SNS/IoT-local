@@ -42,11 +42,14 @@ def mdns_analysis(out_dir, dict_dec, packets_dict):
                             query_records[(qry_name, qry_type)] = query_records.get((qry_name, qry_type), 0) + 1
                             
                 else:
-                    qry_name = packet.mdns.dns_qry_name
-                    qry_type = packet.mdns.dns_qry_type
-                    if qry_type in type_dict:
-                        qry_type = type_dict[qry_type]
-                    query_records[(qry_name, qry_type)] = query_records.get((qry_name, qry_type), 0) + 1
+                    try:
+                        qry_name = packet.mdns.dns_qry_name
+                        qry_type = packet.mdns.dns_qry_type
+                        if qry_type in type_dict:
+                            qry_type = type_dict[qry_type]
+                        query_records[(qry_name, qry_type)] = query_records.get((qry_name, qry_type), 0) + 1
+                    except:
+                        pass
                         
                 
             else:

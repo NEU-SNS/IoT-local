@@ -10,7 +10,12 @@ def ssdp_analysis(out_dir, dict_dec, packets_dict):
     mac_dict = read_mac_address()
     # ssdp&&!icmp
     for device in dict_dec:
-        my_device_mac = mac_dict[device]
+        if 'honeypot' in device:
+            if 'imdea' in device:
+                tmp_device = 'imdea-pi'
+            else:
+                tmp_device = 'iotvm-local'
+        my_device_mac = mac_dict[tmp_device]
         if device not in packets_dict:
             print('No SSDP Device: %s' % device)
             continue
