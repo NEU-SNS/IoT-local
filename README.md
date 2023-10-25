@@ -1,5 +1,8 @@
 # About
-This repository includes scripts to analyze local traffic of smart home IoT devices.  
+This repository includes scripts to analyze local traffic of smart home IoT devices for our IMC23 paper.  
+For more details about our paper: https://github.com/Android-Observatory/IoT-LAN
+
+To be updated soon! 
 
 # Files
 
