@@ -1,0 +1,218 @@
+<html>
+<head>
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis.css" type="text/css" />
+<script type="text/javascript" src="https://cdnjs.cloudflare.com/ajax/libs/vis/4.16.1/vis-network.min.js"> </script>
+<script type="text/javascript" src="canvas2svg.js"></script>
+<center>
+<h1></h1>
+</center>
+
+<!-- <link rel="stylesheet" href="../node_modules/vis/dist/vis.min.css" type="text/css" />
+<script type="text/javascript" src="../node_modules/vis/dist/vis.js"> </script>-->
+
+<style type="text/css">
+
+        #mynetwork {
+            width: 1000px;
+            height: 1000px;
+            background-color: #ffffff;
+            border: 1px solid lightgray;
+            position: relative;
+            float: left;
+        }
+
+        
+
+        
+        #config {
+            float: left;
+            width: 400px;
+            height: 600px;
+        }
+        
+
+        
+</style>
+
+
+<script type="text/javascript">
+
+    // initialize global variables.
+    var edges;
+    var nodes;
+    var network; 
+    var container;
+    var options, data;
+
+    C2S.prototype.circle = CanvasRenderingContext2D.prototype.circle;
+    C2S.prototype.square = CanvasRenderingContext2D.prototype.square;
+    C2S.prototype.triangle = CanvasRenderingContext2D.prototype.triangle;
+    C2S.prototype.triangleDown = CanvasRenderingContext2D.prototype.triangleDown;
+    C2S.prototype.star = CanvasRenderingContext2D.prototype.star;
+    C2S.prototype.diamond = CanvasRenderingContext2D.prototype.diamond;
+    C2S.prototype.roundRect = CanvasRenderingContext2D.prototype.roundRect;
+    C2S.prototype.ellipse_vis = CanvasRenderingContext2D.prototype.ellipse_vis;
+    C2S.prototype.database = CanvasRenderingContext2D.prototype.database;
+    C2S.prototype.arrowEndpoint = CanvasRenderingContext2D.prototype.arrowEndpoint;
+    C2S.prototype.circleEndpoint = CanvasRenderingContext2D.prototype.circleEndpoint;
+    C2S.prototype.dashedLine = CanvasRenderingContext2D.prototype.dashedLine;
+
+    function exportSvg()
+    {
+        var networkContainer = network.body.container;
+        var ctx = new C2S({width: networkContainer.clientWidth, height: networkContainer.clientWidth, embedImages: true});
+
+        var canvasProto = network.canvas.__proto__;
+        var currentGetContext = canvasProto.getContext;
+        canvasProto.getContext = function()
+        {
+            return ctx;
+        }
+        var svgOptions = {
+            nodes: {
+                shapeProperties: {
+                    interpolation: false //so images are not scaled svg will get full image
+                },
+                scaling: { label: { drawThreshold : 0} },
+                font:{color:'#000000'}
+            },
+            edges: {
+                scaling: { label: { drawThreshold : 0} }
+            }
+        };
+        network.setOptions(svgOptions);
+        network.redraw();
+        network.setOptions(options);
+        canvasProto.getContext = currentGetContext;
+        ctx.waitForComplete(function()
+            {
+                var svg = ctx.getSerializedSvg();
+                showSvg(svg);
+            });
+    }
+    
+    function showSvg(svg)
+    {
+        var svgBlob = new Blob([svg], {type: 'image/svg+xml'});
+        openBlob(svgBlob, "network.svg");
+    }
+    
+    function openBlob(blob, fileName)
+    {
+		if(window.navigator && window.navigator.msSaveOrOpenBlob)
+        {
+
+            //blobToDataURL(blob, function(dataurl){window.open(dataurl);});
+            window.navigator.msSaveOrOpenBlob(blob,fileName);
+        }
+        else
+        {
+			var a = document.getElementById("blobLink");
+			if(!a)
+			{
+				a = document.createElement("a");
+				document.body.appendChild(a);
+				a.setAttribute("id", "blobLink");
+				a.style = "display: none";
+			}
+			var data = window.URL.createObjectURL(blob);
+			a.href = data;
+			a.download = fileName;
+			a.click();
+			setTimeout(function()
+				{
+				// For Firefox it is necessary to delay revoking the ObjectURL
+				window.URL.revokeObjectURL(data);
+				}
+				, 100);
+        }
+    }
+    // This method is responsible for drawing the graph, returns the drawn network
+    function drawGraph() {
+        var container = document.getElementById('mynetwork');
+        
+        
+
+        // // parsing and collecting nodes and edges from the python
+        // nodes = new vis.DataSet([{"id": "echoshow5", "label": "echoshow5", "shape": "dot", "size": 8}, {"id": "t-philips-hub", "label": "t-philips-hub", "shape": "dot", "size": 8}, {"id": "echodot4b", "label": "echodot4b", "shape": "dot", "size": 8}, {"id": "echospot", "label": "echospot", "shape": "dot", "size": 8}, {"id": "anpviz-cam", "label": "anpviz-cam", "shape": "dot", "size": 8}, {"id": "t-wemo-plug", "label": "t-wemo-plug", "shape": "dot", "size": 8}, {"id": "amcrest-cam-wired", "label": "amcrest-cam-wired", "shape": "dot", "size": 8}, {"id": "wansview-cam-wired", "label": "wansview-cam-wired", "shape": "dot", "size": 8}, {"id": "chromecast-googletv", "label": "chromecast-googletv", "shape": "dot", "size": 8}, {"id": "google-home-mini", "label": "google-home-mini", "shape": "dot", "size": 8}, {"id": "google-nest-mini2", "label": "google-nest-mini2", "shape": "dot", "size": 8}, {"id": "google-home-mini3", "label": "google-home-mini3", "shape": "dot", "size": 8}, {"id": "google-home-mini2", "label": "google-home-mini2", "shape": "dot", "size": 8}, {"id": "google-nest-mini1", "label": "google-nest-mini1", "shape": "dot", "size": 8}]);
+        // edges = new vis.DataSet([{"from": "echoshow5", "to": "t-philips-hub", "arrows": "to, from","value": 10.0}, {"from": "echodot4b", "to": "t-philips-hub", "value": 8.188531921359715}, {"from": "echospot", "to": "t-philips-hub", "value": 1.28914278736605}, {"from": "anpviz-cam", "to": "t-philips-hub", "value": 0.1030366515047479}, {"from": "echodot4b", "to": "t-wemo-plug", "value": 2.0485676520319145}, {"from": "amcrest-cam-wired", "to": "echodot4b", "value": 0.13049532225266353}, {"from": "echodot4b", "to": "wansview-cam-wired", "value": 0.15851442052932607}, {"from": "chromecast-googletv", "to": "echodot4b", "value": 0.014899170886199952}, {"from": "echoshow5", "to": "t-wemo-plug", "value": 2.5432656886674723}, {"from": "amcrest-cam-wired", "to": "echoshow5", "value": 0.15979019051346552}, {"from": "echoshow5", "to": "wansview-cam-wired", "value": 0.19409929044407276}, {"from": "chromecast-googletv", "to": "echoshow5", "value": 0.020858839240679928}, {"from": "google-home-mini", "to": "google-nest-mini2", "value": 3.1653493582193533}, {"from": "google-home-mini", "to": "google-home-mini3", "value": 5.449610958499658}, {"from": "echospot", "to": "t-wemo-plug", "value": 2.4822246512477713}, {"from": "echospot", "to": "wansview-cam-wired", "value": 0.19086430227000487}, {"from": "anpviz-cam", "to": "wansview-cam-wired", "value": 0.003296498512588888}, {"from": "google-home-mini2", "to": "google-nest-mini1", "value": 3.7885607173107863}, {"from": "amcrest-cam-wired", "to": "echospot", "value": 0.15712702067157444}, {"from": "chromecast-googletv", "to": "echospot", "value": 0.026818507595159913}]);
+
+    nodes = new vis.DataSet([{"id": "amazon-plug", "label": "amazon-plug", "shape": "dot", "size": 8}, {"id": "amcrest-cam-wired", "label": "amcrest-cam-wired", "shape": "dot", "size": 8}, {"id": "appletv-wifi", "label": "appletv-wifi", "shape": "dot", "size": 8}, {"id": "aqara-hub", "label": "aqara-hub", "shape": "dot", "size": 8}, {"id": "arlo-doorbell", "label": "arlo-doorbell", "shape": "dot", "size": 8}, {"id": "arlo-q-cam", "label": "arlo-q-cam", "shape": "dot", "size": 8}, {"id": "blueair-purifier", "label": "blueair-purifier", "shape": "dot", "size": 8}, {"id": "brewer", "label": "brewer", "shape": "dot", "size": 8}, {"id": "bulb1", "label": "bulb1", "shape": "dot", "size": 8}, {"id": "chromecast-googletv", "label": "chromecast-googletv", "shape": "dot", "size": 8}, {"id": "dlink-camera", "label": "dlink-camera", "shape": "dot", "size": 8}, {"id": "echodot", "label": "echodot", "shape": "dot", "size": 8}, {"id": "echodot3a", "label": "echodot3a", "shape": "dot", "size": 8}, {"id": "echodot3b", "label": "echodot3b", "shape": "dot", "size": 8}, {"id": "echodot3c", "label": "echodot3c", "shape": "dot", "size": 8}, {"id": "echodot3d", "label": "echodot3d", "shape": "dot", "size": 8}, {"id": "echodot4a", "label": "echodot4a", "shape": "dot", "size": 8}, {"id": "echodot4c", "label": "echodot4c", "shape": "dot", "size": 8}, {"id": "echoflex1", "label": "echoflex1", "shape": "dot", "size": 8}, {"id": "echoflex2", "label": "echoflex2", "shape": "dot", "size": 8}, {"id": "echoplus", "label": "echoplus", "shape": "dot", "size": 8}, {"id": "echoshow5", "label": "echoshow5", "shape": "dot", "size": 8}, {"id": "echospot", "label": "echospot", "shape": "dot", "size": 8}, {"id": "facebook-portal-mini", "label": "facebook-portal-mini", "shape": "dot", "size": 8}, {"id": "firetv", "label": "firetv", "shape": "dot", "size": 8}, {"id": "fridge", "label": "fridge", "shape": "dot", "size": 8}, {"id": "google-home-mini", "label": "google-home-mini", "shape": "dot", "size": 8}, {"id": "google-home-mini2", "label": "google-home-mini2", "shape": "dot", "size": 8}, {"id": "google-home-mini3", "label": "google-home-mini3", "shape": "dot", "size": 8}, {"id": "google-nest-mini1", "label": "google-nest-mini1", "shape": "dot", "size": 8}, {"id": "google-nest-mini2", "label": "google-nest-mini2", "shape": "dot", "size": 8}, {"id": "gosund-bulb1", "label": "gosund-bulb1", "shape": "dot", "size": 8}, {"id": "homepod", "label": "homepod", "shape": "dot", "size": 8}, {"id": "homepod-mini1", "label": "homepod-mini1", "shape": "dot", "size": 8}, {"id": "homepod-mini2", "label": "homepod-mini2", "shape": "dot", "size": 8}, {"id": "icsee-doorbell", "label": "icsee-doorbell", "shape": "dot", "size": 8}, {"id": "ikea-hub", "label": "ikea-hub", "shape": "dot", "size": 8}, {"id": "ikettle", "label": "ikettle", "shape": "dot", "size": 8}, {"id": "keyco-air", "label": "keyco-air", "shape": "dot", "size": 8}, {"id": "lefun-cam-wired", "label": "lefun-cam-wired", "shape": "dot", "size": 8}, {"id": "lgtv-wired", "label": "lgtv-wired", "shape": "dot", "size": 8}, {"id": "magichome-strip", "label": "magichome-strip", "shape": "dot", "size": 8}, {"id": "meross-dooropener", "label": "meross-dooropener", "shape": "dot", "size": 8}, {"id": "microseven-camera", "label": "microseven-camera", "shape": "dot", "size": 8}, {"id": "microwave", "label": "microwave", "shape": "dot", "size": 8}, {"id": "nest-camera", "label": "nest-camera", "shape": "dot", "size": 8}, {"id": "nest-doorbell", "label": "nest-doorbell", "shape": "dot", "size": 8}, {"id": "nest-hub-max", "label": "nest-hub-max", "shape": "dot", "size": 8}, {"id": "nest-tstat", "label": "nest-tstat", "shape": "dot", "size": 8}, {"id": "nintendo-switch", "label": "nintendo-switch", "shape": "dot", "size": 8}, {"id": "ring-camera", "label": "ring-camera", "shape": "dot", "size": 8}, {"id": "ring-chime1", "label": "ring-chime1", "shape": "dot", "size": 8}, {"id": "ring-doorbell", "label": "ring-doorbell", "shape": "dot", "size": 8}, {"id": "ring-doorbell-wired", "label": "ring-doorbell-wired", "shape": "dot", "size": 8}, {"id": "ring-indoor-cam", "label": "ring-indoor-cam", "shape": "dot", "size": 8}, {"id": "roku-tv", "label": "roku-tv", "shape": "dot", "size": 8}, {"id": "smartlife-bulb", "label": "smartlife-bulb", "shape": "dot", "size": 8}, {"id": "smartthings-hub", "label": "smartthings-hub", "shape": "dot", "size": 8}, {"id": "sousvide", "label": "sousvide", "shape": "dot", "size": 8}, {"id": "switchbot-hub", "label": "switchbot-hub", "shape": "dot", "size": 8}, {"id": "t-echodot", "label": "t-echodot", "shape": "dot", "size": 8}, {"id": "t-philips-hub", "label": "t-philips-hub", "shape": "dot", "size": 8}, {"id": "t-wemo-plug", "label": "t-wemo-plug", "shape": "dot", "size": 8}, {"id": "thermopro-sensor", "label": "thermopro-sensor", "shape": "dot", "size": 8}, {"id": "tivostream", "label": "tivostream", "shape": "dot", "size": 8}, {"id": "tplink-bulb", "label": "tplink-bulb", "shape": "dot", "size": 8}, {"id": "tplink-plug", "label": "tplink-plug", "shape": "dot", "size": 8}, {"id": "tuya-camera", "label": "tuya-camera", "shape": "dot", "size": 8}, {"id": "ubell-doorbell", "label": "ubell-doorbell", "shape": "dot", "size": 8}, {"id": "wansview-cam-wired", "label": "wansview-cam-wired", "shape": "dot", "size": 8}, {"id": "withings-bpm", "label": "withings-bpm", "shape": "dot", "size": 8}, {"id": "withings-sleep", "label": "withings-sleep", "shape": "dot", "size": 8}, {"id": "wyze-cam", "label": "wyze-cam", "shape": "dot", "size": 8}, {"id": "xiaomi-ricecooker", "label": "xiaomi-ricecooker", "shape": "dot", "size": 8}, {"id": "yi-camera", "label": "yi-camera", "shape": "dot", "size": 8}, {"id": "echoshow8", "label": "echoshow8", "shape": "dot", "size": 8}, {"id": "echodot5a", "label": "echodot5a", "shape": "dot", "size": 8}, {"id": "echodot5b", "label": "echodot5b", "shape": "dot", "size": 8}, {"id": "nest-hub", "label": "nest-hub", "shape": "dot", "size": 8}, {"id": "meross-plug1", "label": "meross-plug1", "shape": "dot", "size": 8}, {"id": "meross-plug2", "label": "meross-plug2", "shape": "dot", "size": 8}, {"id": "sengled-bulb", "label": "sengled-bulb", "shape": "dot", "size": 8}, {"id": "wiz-bulb", "label": "wiz-bulb", "shape": "dot", "size": 8}, {"id": "yeelight-bulb", "label": "yeelight-bulb", "shape": "dot", "size": 8}, {"id": "blink-doorbell", "label": "blink-doorbell", "shape": "dot", "size": 8}]);
+
+    edges = new vis.DataSet([{"from": "amcrest-cam-wired", "to": "echodot", "value": 0.031613}, {"from": "amcrest-cam-wired", "to": "echodot3a", "value": 0.032170}, {"from": "amcrest-cam-wired", "to": "echodot3b", "value": 0.032040}, {"from": "amcrest-cam-wired", "to": "echodot3c", "value": 0.031882}, {"from": "amcrest-cam-wired", "to": "echodot3d", "value": 0.032095}, {"from": "amcrest-cam-wired", "to": "echodot3uk", "value": 0.015544}, {"from": "amcrest-cam-wired", "to": "echodot4a", "value": 0.032133}, {"from": "amcrest-cam-wired", "to": "echodot4c", "value": 0.021457}, {"from": "amcrest-cam-wired", "to": "echodot5a", "value": 0.025171}, {"from": "amcrest-cam-wired", "to": "echodot5b", "value": 0.027881}, {"from": "amcrest-cam-wired", "to": "echoflex1", "value": 0.031631}, {"from": "amcrest-cam-wired", "to": "echoflex2", "value": 0.031613}, {"from": "amcrest-cam-wired", "to": "echoplus", "value": 0.032973}, {"from": "amcrest-cam-wired", "to": "echoshow5", "value": 0.031576}, {"from": "amcrest-cam-wired", "to": "echoshow8", "value": 0.032133}, {"from": "amcrest-cam-wired", "to": "echospot", "value": 0.031557}, {"from": "amcrest-cam-wired", "to": "t-echodot", "value": 0.031093}, {"from": "appletv-wifi", "to": "homepod", "value": 2.916370}, {"from": "appletv-wifi", "to": "homepod-mini1", "value": 2.545738}, {"from": "appletv-wifi", "to": "homepod-mini2", "value": 0.682993}, {"from": "appletv-wifi", "to": "iphone7-pink", "value": 0.211687}, {"from": "appletv-wifi", "to": "iphonexs", "value": 0.291600}, {"from": "chromecast-googletv", "to": "echodot", "value": 0.017629}, {"from": "chromecast-googletv", "to": "echodot3a", "value": 0.019483}, {"from": "chromecast-googletv", "to": "echodot3b", "value": 0.018424}, {"from": "chromecast-googletv", "to": "echodot3c", "value": 0.021157}, {"from": "chromecast-googletv", "to": "echodot3d", "value": 0.017304}, {"from": "chromecast-googletv", "to": "echodot3uk", "value": 0.006960}, {"from": "chromecast-googletv", "to": "echodot4a", "value": 0.020530}, {"from": "chromecast-googletv", "to": "echodot4c", "value": 0.009442}, {"from": "chromecast-googletv", "to": "echodot5a", "value": 0.014462}, {"from": "chromecast-googletv", "to": "echodot5b", "value": 0.016177}, {"from": "chromecast-googletv", "to": "echoflex1", "value": 0.017272}, {"from": "chromecast-googletv", "to": "echoflex2", "value": 0.019555}, {"from": "chromecast-googletv", "to": "echoplus", "value": 0.017973}, {"from": "chromecast-googletv", "to": "echoshow5", "value": 0.018925}, {"from": "chromecast-googletv", "to": "echoshow8", "value": 0.020418}, {"from": "chromecast-googletv", "to": "echospot", "value": 0.014282}, {"from": "chromecast-googletv", "to": "google-home-mini", "value": 5.888975}, {"from": "chromecast-googletv", "to": "google-home-mini2", "value": 5.641972}, {"from": "chromecast-googletv", "to": "google-home-mini3", "value": 2.602539}, {"from": "chromecast-googletv", "to": "google-nest-mini1", "value": 8.284239}, {"from": "chromecast-googletv", "to": "google-nest-mini2", "value": 2.953529}, {"from": "chromecast-googletv", "to": "nest-camera", "value": 0.333895}, {"from": "chromecast-googletv", "to": "nest-doorbell", "value": 0.254107}, {"from": "chromecast-googletv", "to": "nest-hub", "value": 1.005718}, {"from": "chromecast-googletv", "to": "nest-hub-max", "value": 12.985051}, {"from": "chromecast-googletv", "to": "t-echodot", "value": 0.016765}, {"from": "echodot", "to": "echodot3a", "value": 2.401797}, {"from": "echodot", "to": "echodot3b", "value": 2.381370}, {"from": "echodot", "to": "echodot3c", "value": 2.325118}, {"from": "echodot", "to": "echodot3d", "value": 2.418145}, {"from": "echodot", "to": "echodot3uk", "value": 1.202128}, {"from": "echodot", "to": "echodot4a", "value": 2.336801}, {"from": "echodot", "to": "echodot4c", "value": 2.381812}, {"from": "echodot", "to": "echodot5a", "value": 2.355074}, {"from": "echodot", "to": "echodot5b", "value": 2.360618}, {"from": "echodot", "to": "echoflex1", "value": 2.333139}, {"from": "echodot", "to": "echoflex2", "value": 2.329163}, {"from": "echodot", "to": "echoplus", "value": 2.346172}, {"from": "echodot", "to": "echoshow5", "value": 2.330682}, {"from": "echodot", "to": "echoshow8", "value": 18.319113}, {"from": "echodot", "to": "echospot", "value": 2.359314}, {"from": "echodot", "to": "lgtv-wired", "value": 0.162801}, {"from": "echodot", "to": "nest-hub", "value": 0.023542}, {"from": "echodot", "to": "roku-tv", "value": 0.028115}, {"from": "echodot", "to": "t-echodot", "value": 2.469511}, {"from": "echodot", "to": "t-wemo-plug", "value": 0.019670}, {"from": "echodot", "to": "tivostream", "value": 0.033076}, {"from": "echodot", "to": "tplink-plug", "value": 0.649160}, {"from": "echodot3a", "to": "anpviz-cam", "value": 0.000052}, {"from": "echodot3a", "to": "echodot3b", "value": 2.445599}, {"from": "echodot3a", "to": "echodot3c", "value": 2.356461}, {"from": "echodot3a", "to": "echodot3d", "value": 2.428180}, {"from": "echodot3a", "to": "echodot3uk", "value": 1.221947}, {"from": "echodot3a", "to": "echodot4a", "value": 2.362806}, {"from": "echodot3a", "to": "echodot4c", "value": 2.371130}, {"from": "echodot3a", "to": "echodot5a", "value": 2.392154}, {"from": "echodot3a", "to": "echodot5b", "value": 2.372692}, {"from": "echodot3a", "to": "echoflex1", "value": 2.395298}, {"from": "echodot3a", "to": "echoflex2", "value": 2.353906}, {"from": "echodot3a", "to": "echoplus", "value": 2.361819}, {"from": "echodot3a", "to": "echoshow5", "value": 2.355853}, {"from": "echodot3a", "to": "echoshow8", "value": 19.905639}, {"from": "echodot3a", "to": "echospot", "value": 2.428046}, {"from": "echodot3a", "to": "lgtv-wired", "value": 0.164156}, {"from": "echodot3a", "to": "nest-hub", "value": 0.033649}, {"from": "echodot3a", "to": "roku-tv", "value": 0.076384}, {"from": "echodot3a", "to": "t-echodot", "value": 2.412637}, {"from": "echodot3a", "to": "t-wemo-plug", "value": 0.834099}, {"from": "echodot3a", "to": "tivostream", "value": 0.033615}, {"from": "echodot3a", "to": "tplink-bulb", "value": 0.496437}, {"from": "echodot3a", "to": "tplink-plug", "value": 0.353709}, {"from": "echodot3b", "to": "anpviz-cam", "value": 0.000000}, {"from": "echodot3b", "to": "echodot3c", "value": 2.350554}, {"from": "echodot3b", "to": "echodot3d", "value": 2.432004}, {"from": "echodot3b", "to": "echodot3uk", "value": 1.240343}, {"from": "echodot3b", "to": "echodot4a", "value": 2.392573}, {"from": "echodot3b", "to": "echodot4c", "value": 2.376459}, {"from": "echodot3b", "to": "echodot5a", "value": 2.371533}, {"from": "echodot3b", "to": "echodot5b", "value": 2.374459}, {"from": "echodot3b", "to": "echoflex1", "value": 2.353885}, {"from": "echodot3b", "to": "echoflex2", "value": 2.348672}, {"from": "echodot3b", "to": "echoplus", "value": 2.368988}, {"from": "echodot3b", "to": "echoshow5", "value": 2.367041}, {"from": "echodot3b", "to": "echoshow8", "value": 19.789140}, {"from": "echodot3b", "to": "echospot", "value": 2.384073}, {"from": "echodot3b", "to": "lgtv-wired", "value": 0.163569}, {"from": "echodot3b", "to": "nest-hub", "value": 0.033630}, {"from": "echodot3b", "to": "roku-tv", "value": 0.080633}, {"from": "echodot3b", "to": "t-echodot", "value": 2.372609}, {"from": "echodot3b", "to": "t-wemo-plug", "value": 0.801997}, {"from": "echodot3b", "to": "tivostream", "value": 0.033615}, {"from": "echodot3b", "to": "tplink-bulb", "value": 0.458936}, {"from": "echodot3b", "to": "tplink-plug", "value": 0.344612}, {"from": "echodot3c", "to": "echodot3d", "value": 2.353044}, {"from": "echodot3c", "to": "echodot3uk", "value": 1.195973}, {"from": "echodot3c", "to": "echodot4a", "value": 2.277833}, {"from": "echodot3c", "to": "echodot4c", "value": 2.325736}, {"from": "echodot3c", "to": "echodot5a", "value": 2.299233}, {"from": "echodot3c", "to": "echodot5b", "value": 2.303542}, {"from": "echodot3c", "to": "echoflex1", "value": 2.279866}, {"from": "echodot3c", "to": "echoflex2", "value": 2.272333}, {"from": "echodot3c", "to": "echoplus", "value": 2.293950}, {"from": "echodot3c", "to": "echoshow5", "value": 2.274684}, {"from": "echodot3c", "to": "echoshow8", "value": 18.252662}, {"from": "echodot3c", "to": "echospot", "value": 2.303578}, {"from": "echodot3c", "to": "lgtv-wired", "value": 0.162561}, {"from": "echodot3c", "to": "nest-hub", "value": 0.032828}, {"from": "echodot3c", "to": "roku-tv", "value": 0.077269}, {"from": "echodot3c", "to": "t-echodot", "value": 2.296700}, {"from": "echodot3c", "to": "t-philips-hub", "value": 0.951005}, {"from": "echodot3c", "to": "t-wemo-plug", "value": 0.782516}, {"from": "echodot3c", "to": "tivostream", "value": 0.033335}, {"from": "echodot3c", "to": "tplink-bulb", "value": 0.467551}, {"from": "echodot3c", "to": "tplink-plug", "value": 0.356099}, {"from": "echodot3d", "to": "anpviz-cam", "value": 0.000000}, {"from": "echodot3d", "to": "echodot3uk", "value": 1.221650}, {"from": "echodot3d", "to": "echodot4a", "value": 2.361859}, {"from": "echodot3d", "to": "echodot4c", "value": 2.393242}, {"from": "echodot3d", "to": "echodot5a", "value": 2.385254}, {"from": "echodot3d", "to": "echodot5b", "value": 2.381794}, {"from": "echodot3d", "to": "echoflex1", "value": 2.336901}, {"from": "echodot3d", "to": "echoflex2", "value": 2.348111}, {"from": "echodot3d", "to": "echoplus", "value": 2.370969}, {"from": "echodot3d", "to": "echoshow5", "value": 2.353716}, {"from": "echodot3d", "to": "echoshow8", "value": 19.948766}, {"from": "echodot3d", "to": "echospot", "value": 2.378342}, {"from": "echodot3d", "to": "lgtv-wired", "value": 0.164449}, {"from": "echodot3d", "to": "nest-hub", "value": 0.033069}, {"from": "echodot3d", "to": "roku-tv", "value": 0.080407}, {"from": "echodot3d", "to": "t-echodot", "value": 2.378945}, {"from": "echodot3d", "to": "t-wemo-plug", "value": 0.820064}, {"from": "echodot3d", "to": "tivostream", "value": 0.033656}, {"from": "echodot3d", "to": "tplink-bulb", "value": 0.478382}, {"from": "echodot3d", "to": "tplink-plug", "value": 0.334469}, {"from": "echodot4a", "to": "anpviz-cam", "value": 0.000219}, {"from": "echodot4a", "to": "echodot3uk", "value": 1.184013}, {"from": "echodot4a", "to": "echodot4c", "value": 2.298842}, {"from": "echodot4a", "to": "echodot5a", "value": 2.313444}, {"from": "echodot4a", "to": "echodot5b", "value": 2.304744}, {"from": "echodot4a", "to": "echoflex1", "value": 2.286955}, {"from": "echodot4a", "to": "echoflex2", "value": 2.310587}, {"from": "echodot4a", "to": "echoplus", "value": 2.301171}, {"from": "echodot4a", "to": "echoshow5", "value": 2.285327}, {"from": "echodot4a", "to": "echoshow8", "value": 18.507377}, {"from": "echodot4a", "to": "echospot", "value": 2.349046}, {"from": "echodot4a", "to": "lgtv-wired", "value": 0.163619}, {"from": "echodot4a", "to": "nest-hub", "value": 0.033649}, {"from": "echodot4a", "to": "roku-tv", "value": 0.080407}, {"from": "echodot4a", "to": "t-echodot", "value": 2.304324}, {"from": "echodot4a", "to": "t-wemo-plug", "value": 0.781215}, {"from": "echodot4a", "to": "tivostream", "value": 0.033615}, {"from": "echodot4a", "to": "tplink-bulb", "value": 0.473526}, {"from": "echodot4a", "to": "tplink-plug", "value": 0.347251}, {"from": "echodot4c", "to": "anpviz-cam", "value": 0.000000}, {"from": "echodot4c", "to": "echodot3uk", "value": 1.189699}, {"from": "echodot4c", "to": "echodot5a", "value": 2.322207}, {"from": "echodot4c", "to": "echodot5b", "value": 2.320204}, {"from": "echodot4c", "to": "echoflex1", "value": 2.297768}, {"from": "echodot4c", "to": "echoflex2", "value": 2.294104}, {"from": "echodot4c", "to": "echoplus", "value": 2.313508}, {"from": "echodot4c", "to": "echoshow5", "value": 2.299492}, {"from": "echodot4c", "to": "echoshow8", "value": 18.699000}, {"from": "echodot4c", "to": "echospot", "value": 2.311206}, {"from": "echodot4c", "to": "lgtv-wired", "value": 0.109209}, {"from": "echodot4c", "to": "nest-hub", "value": 0.022459}, {"from": "echodot4c", "to": "roku-tv", "value": 0.053688}, {"from": "echodot4c", "to": "t-echodot", "value": 2.319330}, {"from": "echodot4c", "to": "t-wemo-plug", "value": 0.057965}, {"from": "echodot4c", "to": "tivostream", "value": 0.022396}, {"from": "echodot4c", "to": "tplink-bulb", "value": 0.358446}, {"from": "echodot4c", "to": "tplink-plug", "value": 0.225296}, {"from": "echoflex1", "to": "anpviz-cam", "value": 0.000052}, {"from": "echoflex1", "to": "echodot3uk", "value": 1.180834}, {"from": "echoflex1", "to": "echodot5a", "value": 2.305447}, {"from": "echoflex1", "to": "echodot5b", "value": 2.308283}, {"from": "echoflex1", "to": "echoflex2", "value": 2.280643}, {"from": "echoflex1", "to": "echoplus", "value": 2.298851}, {"from": "echoflex1", "to": "echoshow5", "value": 2.312291}, {"from": "echoflex1", "to": "echoshow8", "value": 18.525652}, {"from": "echoflex1", "to": "echospot", "value": 2.357273}, {"from": "echoflex1", "to": "lgtv-wired", "value": 0.161318}, {"from": "echoflex1", "to": "nest-hub", "value": 0.033088}, {"from": "echoflex1", "to": "roku-tv", "value": 0.079066}, {"from": "echoflex1", "to": "t-echodot", "value": 2.306472}, {"from": "echoflex1", "to": "t-wemo-plug", "value": 0.792324}, {"from": "echoflex1", "to": "tivostream", "value": 0.033054}, {"from": "echoflex1", "to": "tplink-bulb", "value": 0.425412}, {"from": "echoflex1", "to": "tplink-plug", "value": 0.325875}, {"from": "echoflex2", "to": "anpviz-cam", "value": 0.000000}, {"from": "echoflex2", "to": "echodot3uk", "value": 1.177604}, {"from": "echoflex2", "to": "echodot5a", "value": 2.301248}, {"from": "echoflex2", "to": "echodot5b", "value": 2.302016}, {"from": "echoflex2", "to": "echoplus", "value": 2.294387}, {"from": "echoflex2", "to": "echoshow5", "value": 2.277896}, {"from": "echoflex2", "to": "echoshow8", "value": 18.568550}, {"from": "echoflex2", "to": "echospot", "value": 2.335865}, {"from": "echoflex2", "to": "lgtv-wired", "value": 0.161835}, {"from": "echoflex2", "to": "nest-hub", "value": 0.033088}, {"from": "echoflex2", "to": "roku-tv", "value": 0.079066}, {"from": "echoflex2", "to": "t-echodot", "value": 2.305604}, {"from": "echoflex2", "to": "t-wemo-plug", "value": 0.795518}, {"from": "echoflex2", "to": "tivostream", "value": 0.033054}, {"from": "echoflex2", "to": "tplink-bulb", "value": 0.412315}, {"from": "echoflex2", "to": "tplink-plug", "value": 0.301406}, {"from": "echoplus", "to": "anpviz-cam", "value": 0.000000}, {"from": "echoplus", "to": "echodot3uk", "value": 1.179483}, {"from": "echoplus", "to": "echodot5a", "value": 2.318754}, {"from": "echoplus", "to": "echodot5b", "value": 2.350159}, {"from": "echoplus", "to": "echoshow5", "value": 2.292187}, {"from": "echoplus", "to": "echoshow8", "value": 18.338358}, {"from": "echoplus", "to": "echospot", "value": 2.316887}, {"from": "echoplus", "to": "lgtv-wired", "value": 0.166949}, {"from": "echoplus", "to": "nest-hub", "value": 0.033967}, {"from": "echoplus", "to": "roku-tv", "value": 0.080370}, {"from": "echoplus", "to": "t-echodot", "value": 2.317162}, {"from": "echoplus", "to": "t-wemo-plug", "value": 0.754516}, {"from": "echoplus", "to": "tivostream", "value": 0.034139}, {"from": "echoshow5", "to": "anpviz-cam", "value": 0.000000}, {"from": "echoshow5", "to": "echodot3uk", "value": 1.187465}, {"from": "echoshow5", "to": "echodot5a", "value": 2.313676}, {"from": "echoshow5", "to": "echodot5b", "value": 2.306807}, {"from": "echoshow5", "to": "echoshow8", "value": 18.200948}, {"from": "echoshow5", "to": "echospot", "value": 2.327614}, {"from": "echoshow5", "to": "firetv", "value": 0.001711}, {"from": "echoshow5", "to": "lgtv-wired", "value": 0.161375}, {"from": "echoshow5", "to": "nest-hub", "value": 0.032526}, {"from": "echoshow5", "to": "roku-tv", "value": 0.077857}, {"from": "echoshow5", "to": "t-echodot", "value": 2.303323}, {"from": "echoshow5", "to": "t-philips-hub", "value": 0.952425}, {"from": "echoshow5", "to": "t-wemo-plug", "value": 0.777575}, {"from": "echoshow5", "to": "tivostream", "value": 0.033054}, {"from": "echoshow5", "to": "tplink-bulb", "value": 0.479533}, {"from": "echoshow5", "to": "tplink-plug", "value": 0.340505}, {"from": "echospot", "to": "anpviz-cam", "value": 0.000000}, {"from": "echospot", "to": "echodot3uk", "value": 1.192008}, {"from": "echospot", "to": "echodot5a", "value": 2.330490}, {"from": "echospot", "to": "echodot5b", "value": 2.330603}, {"from": "echospot", "to": "echoshow8", "value": 18.883070}, {"from": "echospot", "to": "lgtv-wired", "value": 0.161068}, {"from": "echospot", "to": "nest-hub", "value": 0.032869}, {"from": "echospot", "to": "roku-tv", "value": 0.077840}, {"from": "echospot", "to": "t-echodot", "value": 2.335334}, {"from": "echospot", "to": "t-wemo-plug", "value": 0.678810}, {"from": "echospot", "to": "tivostream", "value": 0.033073}, {"from": "fridge", "to": "homepod-mini2", "value": 0.094399}, {"from": "google-home-mini", "to": "google-home-mini2", "value": 1.866283}, {"from": "google-home-mini", "to": "google-home-mini3", "value": 0.837904}, {"from": "google-home-mini", "to": "google-nest-mini1", "value": 8.998781}, {"from": "google-home-mini", "to": "google-nest-mini2", "value": 4.323450}, {"from": "google-home-mini", "to": "nest-camera", "value": 1.900208}, {"from": "google-home-mini", "to": "nest-doorbell", "value": 0.023693}, {"from": "google-home-mini", "to": "nest-hub", "value": 0.879084}, {"from": "google-home-mini", "to": "nest-hub-max", "value": 12.551149}, {"from": "google-home-mini", "to": "t-philips-hub", "value": 3.411085}, {"from": "google-home-mini2", "to": "google-home-mini3", "value": 1.403241}, {"from": "google-home-mini2", "to": "google-nest-mini1", "value": 7.880953}, {"from": "google-home-mini2", "to": "google-nest-mini2", "value": 4.694116}, {"from": "google-home-mini2", "to": "nest-camera", "value": 1.404135}, {"from": "google-home-mini2", "to": "nest-doorbell", "value": 0.023819}, {"from": "google-home-mini2", "to": "nest-hub", "value": 1.672661}, {"from": "google-home-mini2", "to": "nest-hub-max", "value": 12.485668}, {"from": "google-home-mini2", "to": "t-philips-hub", "value": 2.996689}, {"from": "google-home-mini3", "to": "google-nest-mini1", "value": 8.016761}, {"from": "google-home-mini3", "to": "google-nest-mini2", "value": 2.762179}, {"from": "google-home-mini3", "to": "nest-camera", "value": 0.707625}, {"from": "google-home-mini3", "to": "nest-doorbell", "value": 0.023420}, {"from": "google-home-mini3", "to": "nest-hub", "value": 0.856493}, {"from": "google-home-mini3", "to": "nest-hub-max", "value": 12.591610}, {"from": "google-home-mini3", "to": "t-philips-hub", "value": 3.426049}, {"from": "google-nest-mini1", "to": "google-nest-mini2", "value": 10.146446}, {"from": "google-nest-mini1", "to": "nest-camera", "value": 7.701953}, {"from": "google-nest-mini1", "to": "nest-doorbell", "value": 0.066240}, {"from": "google-nest-mini1", "to": "nest-hub", "value": 8.047127}, {"from": "google-nest-mini1", "to": "nest-hub-max", "value": 17.528313}, {"from": "google-nest-mini1", "to": "t-philips-hub", "value": 3.365223}, {"from": "google-nest-mini1", "to": "tivostream", "value": 7.303353}, {"from": "google-nest-mini2", "to": "nest-camera", "value": 1.516457}, {"from": "google-nest-mini2", "to": "nest-doorbell", "value": 0.030827}, {"from": "google-nest-mini2", "to": "nest-hub", "value": 3.031818}, {"from": "google-nest-mini2", "to": "nest-hub-max", "value": 14.409413}, {"from": "google-nest-mini2", "to": "t-philips-hub", "value": 3.373776}, {"from": "google-nest-mini2", "to": "tivostream", "value": 1.591952}, {"from": "homepod", "to": "homepod-mini1", "value": 18.370108}, {"from": "homepod", "to": "homepod-mini2", "value": 3.002164}, {"from": "homepod", "to": "iphone7-pink", "value": 4.961127}, {"from": "homepod", "to": "iphonexs", "value": 0.073436}, {"from": "homepod-mini1", "to": "homepod-mini2", "value": 12.430901}, {"from": "homepod-mini1", "to": "iphone7-pink", "value": 0.334539}, {"from": "homepod-mini1", "to": "iphonexs", "value": 0.085960}, {"from": "homepod-mini1", "to": "meross-plug1", "value": 0.906857}, {"from": "homepod-mini1", "to": "meross-plug2", "value": 0.892370}, {"from": "homepod-mini2", "to": "iphone7-pink", "value": 5.659287}, {"from": "homepod-mini2", "to": "iphonexs", "value": 0.135186}, {"from": "lgtv-wired", "to": "echodot3uk", "value": 0.080171}, {"from": "lgtv-wired", "to": "echodot5a", "value": 0.128637}, {"from": "lgtv-wired", "to": "echodot5b", "value": 0.142276}, {"from": "lgtv-wired", "to": "echoshow8", "value": 0.164025}, {"from": "lgtv-wired", "to": "t-echodot", "value": 0.160127}, {"from": "lgtv-wired", "to": "t-philips-hub", "value": 0.309419}, {"from": "lgtv-wired", "to": "t-wemo-plug", "value": 0.035094}, {"from": "nest-camera", "to": "nest-hub", "value": 0.297162}, {"from": "nest-camera", "to": "nest-hub-max", "value": 0.299743}, {"from": "nest-doorbell", "to": "nest-hub", "value": 0.048810}, {"from": "nest-doorbell", "to": "nest-hub-max", "value": 0.049574}, {"from": "nest-hub-max", "to": "nest-hub", "value": 13.045305}, {"from": "nest-hub-max", "to": "t-philips-hub", "value": 3.247609}, {"from": "nest-hub-max", "to": "tivostream", "value": 11.768769}, {"from": "roku-tv", "to": "echodot3uk", "value": 0.039520}, {"from": "roku-tv", "to": "echodot5a", "value": 0.060295}, {"from": "roku-tv", "to": "echodot5b", "value": 0.070218}, {"from": "roku-tv", "to": "echoshow8", "value": 0.080539}, {"from": "roku-tv", "to": "t-echodot", "value": 0.022752}, {"from": "t-echodot", "to": "echodot3uk", "value": 1.187173}, {"from": "t-echodot", "to": "echodot5a", "value": 2.360316}, {"from": "t-echodot", "to": "echodot5b", "value": 2.329410}, {"from": "t-echodot", "to": "echoshow8", "value": 18.452283}, {"from": "t-echodot", "to": "nest-hub", "value": 0.021857}, {"from": "t-echodot", "to": "t-wemo-plug", "value": 0.435501}, {"from": "t-echodot", "to": "tivostream", "value": 0.032475}, {"from": "t-philips-hub", "to": "nest-hub", "value": 3.370260}, {"from": "t-wemo-plug", "to": "echodot3uk", "value": 0.040286}, {"from": "t-wemo-plug", "to": "echodot5a", "value": 0.069072}, {"from": "t-wemo-plug", "to": "echodot5b", "value": 0.065406}, {"from": "t-wemo-plug", "to": "echoshow8", "value": 0.083814}, {"from": "tivostream", "to": "echodot3uk", "value": 0.016506}, {"from": "tivostream", "to": "echodot5a", "value": 0.026345}, {"from": "tivostream", "to": "echodot5b", "value": 0.029128}, {"from": "tivostream", "to": "echoshow8", "value": 0.033615}, {"from": "tivostream", "to": "nest-hub", "value": 0.048424}, {"from": "tplink-plug", "to": "echodot3uk", "value": 0.178339}, {"from": "tplink-plug", "to": "echodot5b", "value": 0.324400}, {"from": "echoshow8", "to": "anpviz-cam", "value": 0.000754}, {"from": "echoshow8", "to": "echodot3uk", "value": 9.908223}, {"from": "echoshow8", "to": "echodot5a", "value": 18.287786}, {"from": "echoshow8", "to": "echodot5b", "value": 18.253412}, {"from": "echoshow8", "to": "nest-hub", "value": 0.033649}, {"from": "echodot5a", "to": "anpviz-cam", "value": 0.000000}, {"from": "echodot5a", "to": "echodot3uk", "value": 1.190613}, {"from": "echodot5a", "to": "echodot5b", "value": 2.356811}, {"from": "echodot5a", "to": "nest-hub", "value": 0.026370}, {"from": "echodot5b", "to": "anpviz-cam", "value": 0.000000}, {"from": "echodot5b", "to": "echodot3uk", "value": 1.190950}, {"from": "echodot5b", "to": "nest-hub", "value": 0.029157}, {"from": "nest-hub", "to": "echodot3uk", "value": 0.016262}, {"from": "meross-plug1", "to": "iphone7-pink", "value": 0.643210}, {"from": "meross-plug1", "to": "iphonexs", "value": 0.222353}, {"from": "meross-plug2", "to": "iphone7-pink", "value": 0.635451}, {"from": "meross-plug2", "to": "iphonexs", "value": 0.219689}]);
+
+        // adding nodes and edges to the graph
+        data = {nodes: nodes, edges: edges};
+
+        var options = {
+    "configure": {
+        "enabled": true,
+        "filter": [
+            "physics"
+        ]
+    },
+    "edges": {
+        "color": {
+            "inherit": true
+        },
+        "smooth": {
+            "enabled": false,
+            "type": "continuous"
+        }
+    },
+    "interaction": {
+        "dragNodes": true,
+        "hideEdgesOnDrag": false,
+        "hideNodesOnDrag": false
+    },
+    "physics": {
+        "enabled": true,
+        "stabilization": {
+            "enabled": true,
+            "fit": true,
+            "iterations": 1000,
+            "onlyDynamicEdges": false,
+            "updateInterval": 50
+        }
+    }
+};
+        
+        
+
+        
+        // if this network requires displaying the configure window,
+        // put it in its div
+        options.configure["container"] = document.getElementById("config");
+        
+
+        network = new vis.Network(container, data, options);
+	 
+        
+        // network.on("afterDrawing", function (ctx) {
+        //     var dataURL = ctx.canvas.toDataURL();
+        //     document.getElementById('canvasImg').src = dataURL;});
+
+        
+
+        // return network;
+
+    }
+
+    // drawGraph();
+
+</script>
+
+</head>
+
+<body onload="drawGraph()">
+<input type="button" onclick="exportSvg();" value="Export SVG"/>
+<div id = "mynetwork"></div>
+
+<!-- <pre id="eventSpan"></pre> -->
+
+
+<div id = "config" style="width:750px"></div>
+<!-- <input type="button" value="Download image" onclick="document.getElementById('canvasImg').click();">
+<a id="canvasImg" download="filename"></a> -->
+</body>
+</html>
