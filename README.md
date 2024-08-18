@@ -2,23 +2,22 @@
 This repository includes scripts to analyze local traffic of smart home IoT devices for our IMC23 paper.  
 For more details about our paper: https://github.com/Android-Observatory/IoT-LAN
 
-To be updated soon! 
 
 # Files
 
 - `devices.txt`: a list of all devices with their MAC addresses. Add *router* manually. 
-- `analysis.py`: the main script to call.
-- `tagged_analysis`: 
-- `protocol_statistics.py`: 
+- `analysis.py`: the main script.
+- `tagged_analysis`: analysis of controlled interaction experiments.
+- `protocol_statistics.py`: see usage below.
 - `analyser`: analysis files 
-    - `protocols_analysis.py`: protocl-wise analysis
-    - `plotting.py`: plots charts.
-    - `flow_extraction_new.py`: extract flows from traffic
+    - `protocols_analysis.py`: protocol analysis.
+    - `plotting.py`: plot charts.
+    - `flow_extraction_new.py`: extract traffic flows defined by 5-tuple from traffic.
     - `utils.py`, `constants.py`: auxiliary files.
-    - `periodic_analysis.py`: peroidicity analysis
+    - `periodic_analysis.py`: traffic peroidicity analysis.
     - `protocol_identification.py`: automatically identify top-layer protocols from pcaps.
-    - `all_device_analysis.py`: deprecated. protocol distribution, basic analysis, plotting, etc. 
-    - `protocols`: !TODO
+    - `all_device_analysis.py`: deprecated functions. protocol distribution, basic analysis, plotting, etc. 
+    - `protocols`: analysis script of each protocol
     - `backups.py`, `flow_extraction.py`: backup file. 
     - `vis.py`: graph visualization helper. 
 - `scripts`: 
@@ -28,15 +27,13 @@ To be updated soon!
     - `device-to-phone.py`: which device communicates with mobile phone 
 - `connectedGraph`: 
     - `graph_generator.py`: generates connected graph visualizations. 
-- `logs`: nohup log files. To remove
-- `vis`: deprecated. html graph visualizations for all_device_analysis
-- `outputs`: extracted certificates. Need to rename this folder. 
+- `outputs`: extracted TLS certificates.  
 
 # Usage
-### `analysis`: pyshark based protocol statistic
+### `analysis`: pyshark-based protocol statistic
 `python3 analysis.py ~/2022-datasets/idle-dataset-dec ~/local_output/idle-dataset-dec-new/`
 
-### `tagged_analysis`: tagged dataset analysis
+### `tagged_analysis`: tagged dataset (interaction dataset) analysis
 `python3 tagged_analysis.py ~/2022-datasets/tagged-local-new ~/local_output/tagged-dec/`
 
 ### `analysis`: pyshark based protocol statistic focusing on specific traffic group 
@@ -63,19 +60,12 @@ To be updated soon!
 ### merged graph generator: 
 `python3 connectedGraph/merged_html.py`
 
-### CDF
-`python3 scripts/cdf.py`
-
-### others
-`scripts/figure/ipynb`
 
 
 ## Scanning responses
 ### scanning response: what multicast/broadcast traffic has been responded 
 `python3 scripts/scanning_response.py ~/local_output/idle-dataset-dec-new/flow_burst/ ~/local_output/idle-dataset-dec-new/scanning_response_2/`
 
-### scanning response parser jupyter notebook version
-`scanning_table_maker.ipynb`
 
 ### scanning response parser py version
 Scanning device parser: BCMC protocols per device. Input: bcmc/bcmc/new_packet_count
@@ -86,29 +76,8 @@ Scanning response results parser:
 
 ## Other Scripts:
 
-### the stat of ip traffic only w/o router: volume, number of devices communicated with 
-`python3 scripts/ip_traffic_exclude_router.py ~/local_output/idle-dataset-dec-new/tcp_output/ ~/local_output/idle-dataset-dec-new/udp_output/ ~/local_output/idle-dataset-dec-new/ip_traffic_exclude_router`
-
-### periodic log parser. Focus on periodic multicast/broadcast traffic
-`python3 scripts/periodic_log_parser.py ~/local_output/idle-dataset-dec-new/periodic_detection/ ~/local_output/idle-dataset-dec-new/periodic_detection_results/`
-
-### port number information, from flow_burst directory
-`python3 scripts/protocol_ports.py`
-
 ### extract CA from TLS handshakes
 `python3 scripts/extract_ca.py /home/hutr/2022-datasets/idle-dataset-dec /home/hutr/local-traffic-analysis/outputs/tls_dec.txt`
-
-### raw tshark results per flow
-`python3 scripts/raw_tshark_flow_protocol.py in_dir out_dir`
-
-### ndpi results parser: device per protocol and protocol per device
-`python3 scripts/ndpi_results_parser.py`
-
-### diff between tagged network graph and idle network graph
-`python3 scripts/tagged_graph_difference.py ~/local_output/idle-dataset-dec-new/ ~/local_output/tagged-dec/ ./output_diff`
-
-### some stat from the tagged dataset
-`python3 scripts/tagged_dataset_stat.py`
 
 
 ## Helpers:
